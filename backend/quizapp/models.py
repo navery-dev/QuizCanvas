@@ -6,7 +6,7 @@ class Users(models.Model):
     userID = models.AutoField(primary_key=True)
     userName = models.CharField(max_length=10)
     email = models.EmailField(max_length=50)
-    password = models.CharField(max_length=20)
+    password = models.CharField(max_length=128)
     dateJoined = models.DateTimeField(auto_now_add=True)
 
     class Meta:
