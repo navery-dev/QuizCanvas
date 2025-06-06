@@ -25,7 +25,16 @@ class CSVProcessor(FileProcessor):
         try:
             file.seek(0)
             content = file.read().decode('utf-8')
+            
+            # Check if file is empty
+            if not content.strip():
+                raise ValidationError("File is empty")
+            
             csv_reader = csv.DictReader(io.StringIO(content))
+            
+            # Check if fieldnames exist (handles empty CSV case)
+            if csv_reader.fieldnames is None:
+                raise ValidationError("CSV file has no headers or is empty")
             
             # Validate columns exist
             if not all(col in csv_reader.fieldnames for col in cls.REQUIRED_COLUMNS):
@@ -40,6 +49,9 @@ class CSVProcessor(FileProcessor):
                     questions.append(question_data)
                 except ValidationError as e:
                     raise ValidationError(f"Row {row_num}: {str(e)}")
+                except AttributeError as e:
+                    # Handle cases where CSV parsing results in None values
+                    raise ValidationError(f"Row {row_num}: Malformed CSV data - {str(e)}")
             
             if not questions:
                 raise ValidationError("CSV file contains no valid questions")
@@ -53,33 +65,42 @@ class CSVProcessor(FileProcessor):
     
     @classmethod
     def _parse_csv_row(cls, row: Dict[str, str], row_num: int) -> Dict[str, Any]:
-        # Validate all required fields have values
+        # Validate all required fields have values and handle None values
         for field in cls.REQUIRED_COLUMNS:
-            if not row.get(field, '').strip():
+            field_value = row.get(field)
+            if field_value is None or not field_value.strip():
                 raise ValidationError(f"Missing value for '{field}'")
         
-        # Pull answer options into array
-        options = [
-            row['option_a'].strip(),
-            row['option_b'].strip(), 
-            row['option_c'].strip(),
-            row['option_d'].strip()
-        ]
+        # Pull answer options into array, ensuring no None values
+        options = []
+        for option_key in ['option_a', 'option_b', 'option_c', 'option_d']:
+            option_value = row.get(option_key)
+            if option_value is None:
+                raise ValidationError(f"Missing value for '{option_key}'")
+            options.append(option_value.strip())
         
         # Validate correct answer format
-        correct_answer = row['correct_answer'].strip().upper()
+        correct_answer = row.get('correct_answer')
+        if correct_answer is None:
+            raise ValidationError("Missing correct_answer value")
+        
+        correct_answer = correct_answer.strip().upper()
         if correct_answer not in ['A', 'B', 'C', 'D']:
             raise ValidationError("correct_answer must be A, B, C, or D")
         
-        # Convert letter to array
+        # Convert letter to array index
         answer_index = ord(correct_answer) - ord('A')
+        
+        # Handle optional fields safely
+        section = row.get('section', '') or ''
+        explanation = row.get('explanation', '') or ''
         
         return {
             'question_text': row['question'].strip(),
             'answer_options': options,
             'answer_index': answer_index,
-            'section': row.get('section', '').strip() or 'General',
-            'explanation': row.get('explanation', '').strip()
+            'section': section.strip() or 'General',
+            'explanation': explanation.strip()
         }
     
     @classmethod
@@ -106,6 +127,11 @@ class JSONProcessor(FileProcessor):
         try:
             file.seek(0)
             content = file.read().decode('utf-8')
+            
+            # Check if file is empty
+            if not content.strip():
+                raise ValidationError("File is empty")
+            
             data = json.loads(content)
             
             # Validate structure

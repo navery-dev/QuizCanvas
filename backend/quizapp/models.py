@@ -4,8 +4,8 @@ from django.utils import timezone
 
 class Users(models.Model):
     userID = models.AutoField(primary_key=True)
-    userName = models.CharField(max_length=10)
-    email = models.EmailField(max_length=50)
+    userName = models.CharField(max_length=10, unique=True)
+    email = models.EmailField(max_length=50, unique=True)
     password = models.CharField(max_length=128)
     dateJoined = models.DateTimeField(auto_now_add=True)
 

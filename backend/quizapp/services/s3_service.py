@@ -114,6 +114,26 @@ class S3Service:
             logger.error(f"Failed to delete file from S3: {e}")
             return False
 
+def test_connection(self):
+    """
+    Test S3 connection for health checks
+    Returns True if connection is healthy, False otherwise
+    """
+    try:
+        from django.conf import settings
+        
+        # Test basic bucket access
+        response = self.s3_client.head_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
+        
+        return True
+        
+    except Exception as e:
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"S3 health check failed: {str(e)}")
+        return False
+
 _s3_service = None
 
 def get_s3_service() -> S3Service:
