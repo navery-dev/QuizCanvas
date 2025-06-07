@@ -20,7 +20,26 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    delete axios.defaults.headers.common['Authorization'];
+  };
+
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get('/auth/user/');
+        setUser(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        logout();
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       // Verify token is still valid
@@ -29,18 +48,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   }, [token]);
-
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get('/auth/user/');
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const login = async (email, password) => {
     try {
@@ -82,13 +89,6 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data || 'Registration failed' 
       };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   const value = {

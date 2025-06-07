@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { Upload as UploadIcon, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload as UploadIcon, AlertCircle, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 
 const Upload = () => {
@@ -97,7 +97,7 @@ const Upload = () => {
       formData.append('title', quizTitle.trim());
       formData.append('description', quizDescription.trim());
 
-      const response = await axios.post('/quizzes/upload/', formData, {
+      await axios.post('/quizzes/upload/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

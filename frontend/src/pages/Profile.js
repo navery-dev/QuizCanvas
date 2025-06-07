@@ -51,7 +51,7 @@ const Profile = () => {
     setSuccess('');
 
     try {
-      const response = await axios.patch('/auth/user/', formData);
+      await axios.patch('/auth/user/', formData);
       setSuccess('Profile updated successfully!');
       setEditing(false);
       

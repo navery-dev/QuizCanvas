@@ -26,8 +26,56 @@ const Quiz = () => {
       navigate('/login');
       return;
     }
+    
+    const fetchQuizData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch quiz details
+        const quizResponse = await axios.get(`/quizzes/${id}/`);
+        setQuiz(quizResponse.data);
+        
+        // Fetch questions
+        const questionsResponse = await axios.get(`/quizzes/${id}/questions/`);
+        setQuestions(questionsResponse.data);
+        
+        // Start quiz attempt
+        const attemptResponse = await axios.post(`/quizzes/${id}/start-attempt/`);
+        setAttemptId(attemptResponse.data.attempt_id);
+        
+        // Set timer if quiz has time limit
+        if (quizResponse.data.time_limit) {
+          setTimeLeft(quizResponse.data.time_limit * 60); // Convert minutes to seconds
+        }
+        
+      } catch (error) {
+        console.error('Failed to fetch quiz data:', error);
+        setError('Failed to load quiz');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchQuizData();
   }, [id, isAuthenticated, navigate]);
+
+  const handleSubmitQuiz = async () => {
+    setSubmitting(true);
+    try {
+      const response = await axios.post(`/quiz-attempts/${attemptId}/submit/`, {
+        answers: answers
+      });
+      
+      setResults(response.data);
+      setQuizCompleted(true);
+      
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      setError('Failed to submit quiz');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     let interval = null;
@@ -40,35 +88,6 @@ const Quiz = () => {
     }
     return () => clearInterval(interval);
   }, [timeLeft, quizCompleted]);
-
-  const fetchQuizData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch quiz details
-      const quizResponse = await axios.get(`/quizzes/${id}/`);
-      setQuiz(quizResponse.data);
-      
-      // Fetch questions
-      const questionsResponse = await axios.get(`/quizzes/${id}/questions/`);
-      setQuestions(questionsResponse.data);
-      
-      // Start quiz attempt
-      const attemptResponse = await axios.post(`/quizzes/${id}/start-attempt/`);
-      setAttemptId(attemptResponse.data.attempt_id);
-      
-      // Set timer if quiz has time limit
-      if (quizResponse.data.time_limit) {
-        setTimeLeft(quizResponse.data.time_limit * 60); // Convert minutes to seconds
-      }
-      
-    } catch (error) {
-      console.error('Failed to fetch quiz data:', error);
-      setError('Failed to load quiz');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAnswerChange = (questionId, selectedOption) => {
     setAnswers(prev => ({
@@ -86,24 +105,6 @@ const Quiz = () => {
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-
-  const handleSubmitQuiz = async () => {
-    setSubmitting(true);
-    try {
-      const response = await axios.post(`/quiz-attempts/${attemptId}/submit/`, {
-        answers: answers
-      });
-      
-      setResults(response.data);
-      setQuizCompleted(true);
-      
-    } catch (error) {
-      console.error('Failed to submit quiz:', error);
-      setError('Failed to submit quiz');
-    } finally {
-      setSubmitting(false);
     }
   };
 
