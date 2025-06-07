@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { User, Lock, LogIn } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -54,15 +54,15 @@ const Login = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">
-              <Mail size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-              Email Address
+            <label htmlFor="username"> 
+              <User size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
+              Username
             </label>
             <input
-              type="username"
+              type="text"
               id="username"
-              name="username"
-              value={formData.username}
+              name="username" 
+              value={formData.username} 
               onChange={handleChange}
               required
               placeholder="Enter your username"
