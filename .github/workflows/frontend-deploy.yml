@@ -38,8 +38,33 @@ jobs:
     - name: Create 404.html for SPA routing
       working-directory: ./frontend
       run: |
-        # Copy built index.html as 404.html
-        cp build/index.html build/404.html
+        # attempting to build 404.html with redirect script
+        cat > build/404.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <title>QuizCanvas - Redirecting...</title>
+            <script type="text/javascript">
+              // Single Page Apps for GitHub Pages
+              // https://github.com/rafgraph/spa-github-pages
+              var pathSegmentsToKeep = 0;
+              var l = window.location;
+              l.replace(
+                l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+                l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+                l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+                (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+                l.hash
+              );
+            </script>
+          </head>
+          <body>
+            <div>Redirecting to QuizCanvas...</div>
+          </body>
+        </html>
+        EOF
+        echo "404.html created successfully"
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
