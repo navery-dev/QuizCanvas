@@ -10,41 +10,51 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted # runner
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Setup SSH key
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
         
-    - name: Deploy to EC2
+    - name: Deploy Backend
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-          cd /home/${{ secrets.EC2_USERNAME }}/QuizCanvas &&
-          git pull origin main &&
-          cd backend &&
-          
-          # Activate virtual environment
-          source venv/bin/activate &&
-          
-          # Install/update dependencies
-          pip install -r requirements.txt &&
-          
-          # Run migrations
-          python manage.py migrate &&
-          
-          # Collect static files
-          python manage.py collectstatic --noinput &&
-          
-          # Restart services
-          sudo systemctl restart gunicorn &&
-          sudo systemctl restart nginx &&
-          
-          # Check service status
-          sudo systemctl status gunicorn --no-pager -l &&
-          sudo systemctl status nginx --no-pager -l
-        '
+        # Navigate to project directory
+        cd $GITHUB_WORKSPACE
+        cd backend
+        
+        # Create virtual environment if it doesn't exist
+        if [ ! -d "venv" ]; then
+          python3 -m venv venv
+        fi
+        
+        # Activate virtual environment
+        source venv/bin/activate
+        
+        # Install/update dependencies
+        pip install -r requirements.txt
+        
+        # Create .env file with secrets
+        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+        echo "AWS_S3_ARN=${{ secrets.AWS_S3_ARN }}" >> .env
+        echo "DEBUG=False" >> .env
+        echo "ALLOWED_HOSTS=${{ secrets.EC2_HOST }}" >> .env
+        
+        # Run migrations
+        python manage.py migrate
+        
+        # Collect static files
+        python manage.py collectstatic --noinput
+        
+        # Restart services
+        sudo systemctl daemon-reload
+        sudo systemctl restart gunicorn
+        sudo systemctl restart nginx
+        
+        # Check service status
+        sudo systemctl status gunicorn --no-pager -l
+        sudo systemctl status nginx --no-pager -l
+        
+        # Test if the application is responding
+        curl -f http://localhost/ || echo "Warning: Application not responding on localhost"
