@@ -40,8 +40,6 @@ jobs:
         echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
         echo "AWS_S3_ARN=${{ secrets.AWS_S3_ARN }}" >> .env
         echo "DEBUG=False" >> .env
-        echo "ALLOWED_HOSTS=${{ secrets.EC2_HOST }},localhost,127.0.0.1" >> .env
-        
         # Run migrations
         python manage.py migrate
         
