@@ -35,7 +35,7 @@ jobs:
         
         # Create .env file with secrets
         echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
-        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
         echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
         echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
         echo "AWS_S3_ARN=${{ secrets.AWS_S3_ARN }}" >> .env
