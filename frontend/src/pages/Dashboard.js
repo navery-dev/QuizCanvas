@@ -4,6 +4,8 @@ import { useAuth } from '../services/AuthContext';
 import { Plus, BookOpen, BarChart3, Clock, Trash2, Upload, FileText, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
+axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
+
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
@@ -18,13 +20,13 @@ const Dashboard = () => {
       setError('');
       
       // Fetch dashboard data (includes recent activity and stats)
-      const dashboardResponse = await axios.get('/api/dashboard/');
+      const dashboardResponse = await axios.get('/dashboard/');
       if (dashboardResponse.data.success) {
         setDashboardData(dashboardResponse.data.data);
       }
       
       // Fetch user's quizzes
-      const quizzesResponse = await axios.get('/api/quizzes/');
+      const quizzesResponse = await axios.get('/quizzes/');
       if (quizzesResponse.data.success) {
         setQuizzes(quizzesResponse.data.data.quizzes || []);
       }
@@ -55,7 +57,7 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await axios.delete(`/api/quizzes/${quizId}/delete/`);
+      const response = await axios.delete('/quizzes/${quizId}/delete/');
       if (response.data.success) {
         setQuizzes(quizzes.filter(quiz => quiz.quiz_id !== quizId));
         // Refresh dashboard data after deletion
