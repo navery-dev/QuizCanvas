@@ -34,6 +34,12 @@ jobs:
       run: npm run build
       env:
         REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+
+    - name: Create 404.html for SPA routing
+      working-directory: ./frontend
+      run: |
+        # Copy built index.html as 404.html
+        cp build/index.html build/404.html
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
