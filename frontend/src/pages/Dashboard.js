@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { Plus, BookOpen, BarChart3, Clock, Trash2, Upload, FileText, TrendingUp } from 'lucide-react';
@@ -12,15 +12,7 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    fetchDashboardData();
-  }, [isAuthenticated, navigate]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -47,7 +39,15 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    fetchDashboardData();
+  }, [isAuthenticated, navigate, fetchDashboardData]);
 
   const handleDeleteQuiz = async (quizId) => {
     if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
@@ -73,16 +73,6 @@ const Dashboard = () => {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const getMasteryColor = (level) => {
-    switch (level) {
-      case 'Expert': return '#27ae60';
-      case 'Advanced': return '#3498db';
-      case 'Intermediate': return '#f39c12';
-      case 'Beginner': return '#e67e22';
-      default: return '#e74c3c';
-    }
   };
 
   if (loading) {
