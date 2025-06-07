@@ -2178,7 +2178,7 @@ def get_user_dashboard(request):
     try:
         user = request.user
         
-        # RUN LIVE TESTS - Database connectivity
+        # RUN TESTS - Database connectivity
         db_tests = DatabaseConnectionTests()
         db_health = db_tests.test_connection_health()
         if not db_health['success']:
@@ -2188,9 +2188,10 @@ def get_user_dashboard(request):
                 status=503
             )
         
-        # RUN LIVE TESTS - Progress data validation
+        # RUN TESTS - Progress data validation with correct parameters
         progress_tests = ProgressTrackingTests()
-        progress_availability = progress_tests.test_progress_data_availability(user.userID)
+        # Pass user_id and None for quiz_id to show overall progress
+        progress_availability = progress_tests.test_progress_data_availability(user.userID, None)
         
         # Get user's quiz count
         total_quizzes = Quiz.objects.filter(fileID__userID=user).count()

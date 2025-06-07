@@ -669,22 +669,36 @@ class ProgressTrackingTests:
             }
     
     @staticmethod
-    def test_progress_data_availability(user_id, quiz_id):
+    def test_progress_data_availability(user_id, quiz_id=None):
         """Extension: No data - Show empty state"""
         try:
-            attempts = QuizAttempt.objects.filter(
-                userID_id=user_id,
-                quizID_id=quiz_id,
-                completed=True
-            ).count()
-            
-            if attempts == 0:
-                return {
-                    'success': True,
-                    'has_data': False,
-                    'message': 'No completed attempts found. Take a quiz to see your progress!',
-                    'empty_state': True
-                }
+            if quiz_id:
+                # Get progress for specific quiz
+                attempts = QuizAttempt.objects.filter(
+                    userID_id=user_id,
+                    quizID_id=quiz_id,
+                    completed=True
+                ).count()
+                
+                if attempts == 0:
+                    return {
+                        'success': True,
+                        'has_data': False,
+                        'message': 'No completed attempts found for this quiz. Take a quiz to see your progress!',
+                        'empty_state': True
+                    }
+            else:
+                # Get overall progress for dashboard (all quizzes)
+                all_progress = Progress.objects.filter(userID_id=user_id)
+                attempts = all_progress.count()
+                
+                if attempts == 0:
+                    return {
+                        'success': True,
+                        'has_data': False,
+                        'message': 'No progress data found. Take some quizzes to see your progress!',
+                        'empty_state': True
+                    }
             
             return {
                 'success': True,
@@ -700,7 +714,6 @@ class ProgressTrackingTests:
                 'error_code': 'PROGRESS_DB_ERROR',
                 'partial_data': True
             }
-
 
 # Utility functions to run multiple tests for a view
 def run_registration_tests(username, email, password):
