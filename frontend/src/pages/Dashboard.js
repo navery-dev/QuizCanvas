@@ -57,7 +57,7 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await axios.delete('/quizzes/${quizId}/delete/');
+      const response = await axios.delete(`/quizzes/${quizId}/delete/`);
       if (response.data.success) {
         setQuizzes(quizzes.filter(quiz => quiz.quiz_id !== quizId));
         // Refresh dashboard data after deletion
