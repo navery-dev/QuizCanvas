@@ -49,26 +49,26 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     try {
       const response = await axios.post('/auth/login/', {
-        email,
+        username,
         password
       });
       
-      const { access, user: userData } = response.data;
+      const { token: authToken, user: userData } = response.data.data;
       
-      localStorage.setItem('token', access);
-      setToken(access);
-      setUser(userData);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+      localStorage.setItem('token', authToken);
+        setToken(authToken);
+        setUser(userData);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
       
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
       return { 
         success: false, 
-        error: error.response?.data?.detail || 'Login failed' 
+        error: error.response?.data?.error || 'Login failed' 
       };
     }
   };
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Registration failed:', error);
       return { 
         success: false, 
-        error: error.response?.data || 'Registration failed' 
+        error: error.response?.data?.error || 'Registration failed' 
       };
     }
   };
