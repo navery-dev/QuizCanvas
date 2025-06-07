@@ -59,7 +59,37 @@ const Quiz = () => {
     fetchQuizData();
   }, [id, isAuthenticated, navigate]);
 
-  const handleSubmitQuiz = async () => {
+  useEffect(() => {
+    const handleSubmitQuiz = async () => {
+      setSubmitting(true);
+      try {
+        const response = await axios.post(`/quiz-attempts/${attemptId}/submit/`, {
+          answers: answers
+        });
+        
+        setResults(response.data);
+        setQuizCompleted(true);
+        
+      } catch (error) {
+        console.error('Failed to submit quiz:', error);
+        setError('Failed to submit quiz');
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    let interval = null;
+    if (timeLeft > 0 && !quizCompleted) {
+      interval = setInterval(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      handleSubmitQuiz();
+    }
+    return () => clearInterval(interval);
+  }, [timeLeft, quizCompleted, attemptId, answers]);
+
+  const submitQuiz = async () => {
     setSubmitting(true);
     try {
       const response = await axios.post(`/quiz-attempts/${attemptId}/submit/`, {
@@ -76,18 +106,6 @@ const Quiz = () => {
       setSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    let interval = null;
-    if (timeLeft > 0 && !quizCompleted) {
-      interval = setInterval(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      handleSubmitQuiz();
-    }
-    return () => clearInterval(interval);
-  }, [timeLeft, quizCompleted]);
 
   const handleAnswerChange = (questionId, selectedOption) => {
     setAnswers(prev => ({
@@ -283,7 +301,7 @@ const Quiz = () => {
 
             {currentQuestionIndex === questions.length - 1 ? (
               <button
-                onClick={handleSubmitQuiz}
+                onClick={submitQuiz}
                 disabled={submitting}
                 className="btn btn-primary"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
