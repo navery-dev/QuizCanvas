@@ -5,7 +5,7 @@ import { Mail, Lock, LogIn } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -26,7 +26,7 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(formData.email, formData.password);
+    const result = await login(formData.username, formData.password);
     
     if (result.success) {
       navigate('/dashboard');
@@ -54,18 +54,18 @@ const Login = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">
+            <label htmlFor="username">
               <Mail size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
               Email Address
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+              type="username"
+              id="username"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
               required
-              placeholder="Enter your email"
+              placeholder="Enter your username"
             />
           </div>
 
