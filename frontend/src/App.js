@@ -15,7 +15,7 @@ import { AuthProvider } from './services/AuthContext';
 function App() {
   return (
     <AuthProvider>
-      <Router basename="/QuizCanvas">
+      <Router>
         <div className="App">
           <Navbar />
           <main className="main-content">
