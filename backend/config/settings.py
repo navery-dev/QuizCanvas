@@ -16,7 +16,7 @@ JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,api.quizcanvas.xyz,quizcanvas.xyz').split(',')
 
 # Application definition
 INSTALLED_APPS = [
