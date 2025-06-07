@@ -22,31 +22,27 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); 
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await axios.get('/auth/user/');
-        setUser(response.data);
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-        logout();
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Verify token is still valid
-      fetchUser();
-    } else {
-      setLoading(false);
+      
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Error parsing stored user data:', error);
+          logout(); 
+        }
+      }
     }
+    setLoading(false);
   }, [token]);
 
   const login = async (username, password) => {
@@ -56,12 +52,20 @@ export const AuthProvider = ({ children }) => {
         password
       });
       
-      const { token: authToken, user: userData } = response.data.data;
+      const { token: authToken, user_id, username: userName, email } = response.data.data;
+      
+      // Create user object from login response
+      const userData = {
+        user_id,
+        username: userName,
+        email
+      };
       
       localStorage.setItem('token', authToken);
-        setToken(authToken);
-        setUser(userData);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      localStorage.setItem('user', JSON.stringify(userData));
+      setToken(authToken);
+      setUser(userData);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
       
       return { success: true };
     } catch (error) {
