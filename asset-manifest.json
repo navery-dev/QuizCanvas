@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/QuizCanvas/static/css/main.729fe74e.css",
+    "main.js": "/QuizCanvas/static/js/main.506288ea.js",
+    "index.html": "/QuizCanvas/index.html",
+    "main.729fe74e.css.map": "/QuizCanvas/static/css/main.729fe74e.css.map",
+    "main.506288ea.js.map": "/QuizCanvas/static/js/main.506288ea.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.729fe74e.css",
+    "static/js/main.506288ea.js"
+  ]
+}
