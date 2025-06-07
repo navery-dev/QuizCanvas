@@ -2,7 +2,7 @@
   "name": "quizcanvas-frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://navery-dev.github.io/QuizCanvas",
+  "homepage": "https://quizcanvas.xyz",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
