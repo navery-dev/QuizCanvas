@@ -20,13 +20,13 @@ const Dashboard = () => {
       setError('');
       
       // Fetch dashboard data (includes recent activity and stats)
-      const dashboardResponse = await axios.get('/dashboard/');
+      const dashboardResponse = await axios.get('/api/dashboard/');
       if (dashboardResponse.data.success) {
         setDashboardData(dashboardResponse.data.data);
       }
       
       // Fetch user's quizzes
-      const quizzesResponse = await axios.get('/quizzes/');
+      const quizzesResponse = await axios.get('/api/quizzes/');
       if (quizzesResponse.data.success) {
         setQuizzes(quizzesResponse.data.data.quizzes || []);
       }
@@ -57,7 +57,7 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await axios.delete(`/quizzes/${quizId}/delete/`);
+      const response = await axios.delete(`/api/quizzes/${quizId}/delete/`);
       if (response.data.success) {
         setQuizzes(quizzes.filter(quiz => quiz.quiz_id !== quizId));
         // Refresh dashboard data after deletion
