@@ -12,6 +12,7 @@ import re
 import os
 
 from .models import *
+from .views import generate_jwt_token
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,19 @@ class UserAuthenticationTests:
                 'error': 'Unable to create session. Please try again.',
                 'error_code': 'SESSION_CREATION_FAILED'
             }
+    
+    @staticmethod
+    def test_login_rate_limiting(username, ip_address):
+        """Test login rate limiting - placeholder implementation for future enhancement"""
+        # TODO: Implement actual rate limiting logic
+        # For now, always allow login
+        return {
+            'success': True,
+            'rate_limit_ok': True,
+            'attempts_remaining': 5,  # Placeholder
+            'window_reset_time': None,  # Placeholder
+            'message': 'Rate limiting check passed (not yet implemented)'
+        }
 
 class FileUploadTests:
     """
