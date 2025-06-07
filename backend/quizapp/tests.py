@@ -12,7 +12,6 @@ import re
 import os
 
 from .models import *
-from .views import generate_jwt_token
 
 logger = logging.getLogger(__name__)
 
