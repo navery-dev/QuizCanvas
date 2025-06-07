@@ -1,0 +1,50 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+        
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+          cd /home/${{ secrets.EC2_USERNAME }}/QuizCanvas &&
+          git pull origin main &&
+          cd backend &&
+          
+          # Activate virtual environment
+          source venv/bin/activate &&
+          
+          # Install/update dependencies
+          pip install -r requirements.txt &&
+          
+          # Run migrations
+          python manage.py migrate &&
+          
+          # Collect static files
+          python manage.py collectstatic --noinput &&
+          
+          # Restart services
+          sudo systemctl restart gunicorn &&
+          sudo systemctl restart nginx &&
+          
+          # Check service status
+          sudo systemctl status gunicorn --no-pager -l &&
+          sudo systemctl status nginx --no-pager -l
+        '
