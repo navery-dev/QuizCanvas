@@ -309,14 +309,14 @@ const Profile = () => {
                 <p style={{ color: '#7f8c8d', margin: 0 }}>Quiz Attempts</p>
               </div>
               
-              <div style={{ 
-                padding: '1rem', 
-                backgroundColor: '#f8f9fa', 
+              <div style={{
+                padding: '1rem',
+                backgroundColor: '#f8f9fa',
                 borderRadius: '4px',
                 textAlign: 'center'
               }}>
                 <h3 style={{ color: '#e74c3c', margin: '0 0 0.5rem 0' }}>0%</h3>
-                <p style={{ color: '#7f8c8d', margin: 0 }}>Average Score</p>
+                <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
               </div>
             </div>
           </div>

@@ -194,9 +194,9 @@ const Dashboard = () => {
         <div className="card" style={{ textAlign: 'center' }}>
           <BarChart3 size={32} style={{ color: '#e74c3c', marginBottom: '0.5rem' }} />
           <h3 style={{ margin: '0.5rem 0' }}>
-            {dashboardData?.stats?.average_score || 0}%
+            {dashboardData?.stats?.best_score || 0}%
           </h3>
-          <p style={{ color: '#7f8c8d', margin: 0 }}>Average Score</p>
+          <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
         </div>
 
         {dashboardData?.stats?.total_attempts > 0 && (

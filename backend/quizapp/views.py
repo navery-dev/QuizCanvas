@@ -2210,13 +2210,13 @@ def get_user_dashboard(request):
         # Calculate overall stats
         if all_progress.exists():
             total_attempts = sum(p.attemptsCount for p in all_progress)
-            average_score = sum(p.bestScore for p in all_progress) / len(all_progress)
+            best_score = max(p.bestScore for p in all_progress)
             mastery_distribution = {}
             for level in ['Expert', 'Advanced', 'Intermediate', 'Beginner', 'Needs Practice']:
                 mastery_distribution[level] = len([p for p in all_progress if p.masteryLevel == level])
         else:
             total_attempts = 0
-            average_score = 0
+            best_score = 0
             mastery_distribution = {level: 0 for level in ['Expert', 'Advanced', 'Intermediate', 'Beginner', 'Needs Practice']}
         
         return APIResponse.success(
@@ -2229,7 +2229,7 @@ def get_user_dashboard(request):
                 'stats': {
                     'total_quizzes': total_quizzes,
                     'total_attempts': total_attempts,
-                    'average_score': round(average_score, 1),
+                    'best_score': round(best_score, 1),
                     'mastery_distribution': mastery_distribution
                 },
                 'recent_activity': [
