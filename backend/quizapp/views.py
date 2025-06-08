@@ -667,7 +667,17 @@ def upload_quiz_file(request):
         
         logger.info(f"Processing file upload: {uploaded_file.name} by user {user.userName}")
         
-        # Run file upload validation tests
+        # Store original file content before processing
+        uploaded_file.seek(0)
+        original_file_content = uploaded_file.read()
+        logger.info(f"Read {len(original_file_content)} bytes from uploaded file")
+        
+        # Reset for processing
+        uploaded_file.seek(0)
+        
+        # RUN FILE UPLOAD TESTS
+        from .tests import run_file_upload_tests
+        
         upload_test_result = run_file_upload_tests(uploaded_file, user)
         if not upload_test_result['success']:
             logger.warning(f"File upload test failed: {upload_test_result['error']}")
@@ -678,6 +688,9 @@ def upload_quiz_file(request):
             )
         
         logger.info("File upload tests passed, proceeding with file processing")
+        
+        # Reset again before processing
+        uploaded_file.seek(0)
         
         # Process the file using file processors
         try:
@@ -710,11 +723,21 @@ def upload_quiz_file(request):
                 )
                 logger.info(f"Created file record: {file_record.fileID}")
                 
-                # Upload to S3
+                # Upload to S3 using original file content
                 try:
+                    from io import BytesIO
+                    
+                    # Create a file-like object from the original content
+                    file_for_s3 = BytesIO(original_file_content)
+                    file_for_s3.name = uploaded_file.name
+                    file_for_s3.content_type = uploaded_file.content_type
+                    file_for_s3.size = len(original_file_content)
+                    
+                    logger.info(f"Uploading {len(original_file_content)} bytes to S3")
+                    
                     s3_service = get_s3_service()
                     s3_result = s3_service.upload_quiz_file(
-                        uploaded_file, 
+                        file_for_s3, 
                         user.userID, 
                         uploaded_file.name
                     )
@@ -723,14 +746,13 @@ def upload_quiz_file(request):
                     file_record.filePath = s3_result['s3_key'][:100]
                     file_record.save()
                     
-                    logger.info(f"File uploaded to S3: {s3_result['s3_key']}")
+                    logger.info(f"File uploaded to S3 successfully: {s3_result['s3_key']}")
                     
                 except Exception as s3_error:
                     logger.error(f"S3 upload failed: {s3_error}")
-                    # S3 is required - fail the upload if S3 fails
+                    # Fail the upload if S3 fails
                     raise Exception(f"File storage failed: {str(s3_error)}. S3 upload is required for file processing.")
                 
-                # Create Quiz record
                 quiz_title = request.POST.get('quiz_title', uploaded_file.name.split('.')[0])[:50]
                 quiz_description = request.POST.get('quiz_description', 
                                                  f"Quiz imported from {uploaded_file.name}")[:200]
@@ -780,7 +802,7 @@ def upload_quiz_file(request):
                 
                 if not confirmation_test['success']:
                     logger.warning(f"File confirmation test failed: {confirmation_test}")
-                
+
         except Exception as e:
             logger.error(f"Error during file upload processing: {e}")
             return APIResponse.error(
