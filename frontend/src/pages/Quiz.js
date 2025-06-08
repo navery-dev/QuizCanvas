@@ -29,13 +29,14 @@ const Quiz = () => {
     }
     
     const fetchQuizData = async () => {
+      let quizData;
       try {
         setLoading(true);
         
         // Fetch quiz details
         const quizResponse = await axios.get(`/api/quizzes/${id}/`);
         
-        const quizData = quizResponse.data.data.quiz;
+        quizData = quizResponse.data.data.quiz;
         setQuiz(quizData);
         
         // Extract questions from quiz sections
