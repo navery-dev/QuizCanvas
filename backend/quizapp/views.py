@@ -1189,7 +1189,7 @@ def get_quiz_sections(request, quiz_id):
         
         # Get sections with question counts
         sections = Section.objects.filter(quizID=quiz).annotate(
-            question_count=Count('question')
+            question_count=Count('questions')
         ).order_by('sectionName')
         
         sections_data = []
@@ -2109,7 +2109,7 @@ def get_quiz_statistics(request, quiz_id):
         
         # Get section statistics
         sections = Section.objects.filter(quizID=quiz).annotate(
-            question_count=Count('question')
+            question_count=Count('questions')
         )
         
         section_stats = []
