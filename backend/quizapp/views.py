@@ -964,10 +964,10 @@ def get_quiz_details(request, quiz_id):
         
         # Get sections with questions
         sections_data = []
-        sections = Section.objects.filter(quizID=quiz).prefetch_related('question_set').order_by('sectionName')
+        sections = Section.objects.filter(quizID=quiz).prefetch_related('questions').order_by('sectionName')
         
         for section in sections:
-            questions = section.question_set.all().order_by('questionID')
+            questions = section.questions.all().order_by('questionID')
             questions_data = []
             
             for question in questions:
