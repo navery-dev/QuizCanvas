@@ -32,20 +32,32 @@ class CSVProcessor(FileProcessor):
             
             csv_reader = csv.DictReader(io.StringIO(content))
             
-            # Check if fieldnames exist (handles empty CSV case)
+            # Check if fieldnames exist
             if csv_reader.fieldnames is None:
                 raise ValidationError("CSV file has no headers or is empty")
             
-            # Validate columns exist
-            if not all(col in csv_reader.fieldnames for col in cls.REQUIRED_COLUMNS):
-                missing = set(cls.REQUIRED_COLUMNS) - set(csv_reader.fieldnames)
-                raise ValidationError(f"Missing required columns: {', '.join(missing)}")
+            # Clean fieldnames (remove whitespace, convert to lowercase)
+            fieldnames = [name.strip().lower() if name else '' for name in csv_reader.fieldnames]
+            
+            # Create a mapping from cleaned names to original names
+            fieldname_mapping = {name.strip().lower(): name for name in csv_reader.fieldnames if name}
+            
+            # Check required columns using cleaned names
+            required_lower = [col.lower() for col in cls.REQUIRED_COLUMNS]
+            missing_columns = []
+            
+            for req_col in required_lower:
+                if req_col not in fieldnames:
+                    missing_columns.append(req_col)
+            
+            if missing_columns:
+                raise ValidationError(f"CSV missing required columns: {', '.join(missing_columns)}")
             
             # Parse each row and validate data
             questions = []
             for row_num, row in enumerate(csv_reader, start=2):
                 try:
-                    question_data = cls._parse_csv_row(row, row_num)
+                    question_data = cls._parse_csv_row(row, row_num, fieldname_mapping)
                     questions.append(question_data)
                 except ValidationError as e:
                     raise ValidationError(f"Row {row_num}: {str(e)}")
@@ -64,43 +76,57 @@ class CSVProcessor(FileProcessor):
             raise ValidationError(f"CSV parsing error: {str(e)}")
     
     @classmethod
-    def _parse_csv_row(cls, row: Dict[str, str], row_num: int) -> Dict[str, Any]:
-        # Validate all required fields have values and handle None values
+    def _parse_csv_row(cls, row: Dict[str, str], row_num: int, fieldname_mapping: Dict[str, str]) -> Dict[str, Any]:
+        # Helper function to get value from row using case-insensitive lookup
+        def get_field_value(field_name):
+            # Try original case first
+            if field_name in row:
+                return row[field_name]
+            
+            # Try case-insensitive lookup
+            field_lower = field_name.lower()
+            for original_name in fieldname_mapping.values():
+                if original_name.lower() == field_lower:
+                    return row[original_name]
+            
+            return None
+        
+        # Validate all required fields have values
         for field in cls.REQUIRED_COLUMNS:
-            field_value = row.get(field)
-            if field_value is None or not field_value.strip():
+            field_value = get_field_value(field)
+            if field_value is None or not str(field_value).strip():
                 raise ValidationError(f"Missing value for '{field}'")
         
         # Pull answer options into array, ensuring no None values
         options = []
         for option_key in ['option_a', 'option_b', 'option_c', 'option_d']:
-            option_value = row.get(option_key)
+            option_value = get_field_value(option_key)
             if option_value is None:
                 raise ValidationError(f"Missing value for '{option_key}'")
-            options.append(option_value.strip())
+            options.append(str(option_value).strip())
         
         # Validate correct answer format
-        correct_answer = row.get('correct_answer')
+        correct_answer = get_field_value('correct_answer')
         if correct_answer is None:
             raise ValidationError("Missing correct_answer value")
         
-        correct_answer = correct_answer.strip().upper()
-        if correct_answer not in ['A', 'B', 'C', 'D']:
-            raise ValidationError("correct_answer must be A, B, C, or D")
+        correct_answer = str(correct_answer).strip().lower()
+        if correct_answer not in ['a', 'b', 'c', 'd']:
+            raise ValidationError("correct_answer must be a, b, c, or d")
         
         # Convert letter to array index
-        answer_index = ord(correct_answer) - ord('A')
+        answer_index = ord(correct_answer.upper()) - ord('A')
         
         # Handle optional fields safely
-        section = row.get('section', '') or ''
-        explanation = row.get('explanation', '') or ''
+        section = get_field_value('section') or ''
+        explanation = get_field_value('explanation') or ''
         
         return {
-            'question_text': row['question'].strip(),
+            'question_text': str(get_field_value('question')).strip(),
             'answer_options': options,
             'answer_index': answer_index,
-            'section': section.strip() or 'General',
-            'explanation': explanation.strip()
+            'section': str(section).strip() or 'General',
+            'explanation': str(explanation).strip()
         }
     
     @classmethod
@@ -134,19 +160,26 @@ class JSONProcessor(FileProcessor):
             
             data = json.loads(content)
             
-            # Validate structure
-            if not isinstance(data, dict):
-                raise ValidationError("JSON file must contain an object")
+            questions_data = []
             
-            if 'questions' not in data:
-                raise ValidationError("JSON file must contain 'questions' array")
-            
-            if not isinstance(data['questions'], list):
-                raise ValidationError("'questions' must be an array")
+            if isinstance(data, list):
+                # Direct array of questions
+                questions_data = data
+            elif isinstance(data, dict):
+                # Object with questions array
+                if 'questions' not in data:
+                    raise ValidationError("JSON object must contain 'questions' array")
+                
+                if not isinstance(data['questions'], list):
+                    raise ValidationError("'questions' must be an array")
+                
+                questions_data = data['questions']
+            else:
+                raise ValidationError("JSON must be an array of questions or an object with 'questions' array")
             
             # Parse each question
             questions = []
-            for idx, question_data in enumerate(data['questions']):
+            for idx, question_data in enumerate(questions_data):
                 try:
                     parsed_question = cls._parse_json_question(question_data, idx)
                     questions.append(parsed_question)

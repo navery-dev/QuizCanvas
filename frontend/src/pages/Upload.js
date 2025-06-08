@@ -321,6 +321,7 @@ const Upload = () => {
             <div style={{ marginBottom: '1rem' }}>
               <h4 style={{ color: '#3498db', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Example CSV:</h4>
               <div style={{ 
+                whiteSpace: 'pre-wrap',
                 backgroundColor: '#f8f9fa', 
                 padding: '1rem', 
                 borderRadius: '4px',
@@ -343,6 +344,7 @@ const Upload = () => {
               Your JSON file should be an array of question objects:
             </p>
             <div style={{ 
+              whiteSpace: 'pre-wrap',
               backgroundColor: '#f8f9fa', 
               padding: '1rem', 
               borderRadius: '4px',
