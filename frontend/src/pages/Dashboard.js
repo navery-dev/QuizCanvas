@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { Plus, BookOpen, BarChart3, Clock, Trash2, Upload, FileText, TrendingUp } from 'lucide-react';
+import { Plus, BookOpen, BarChart3, Clock, Trash2, Upload, FileText } from 'lucide-react';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
