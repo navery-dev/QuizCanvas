@@ -181,10 +181,9 @@ const Upload = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        {/* Upload Form */}
-        <div className="card">
-          <h2>Upload File</h2>
+      {/* Upload Form */}
+      <div className="card" style={{ marginBottom: '2rem' }}>
+        <h2>Upload File</h2>
           
           <form onSubmit={handleSubmit}>
             {/* File Upload Area */}
@@ -297,11 +296,11 @@ const Upload = () => {
               {uploading ? 'Uploading...' : 'Upload Quiz'}
             </button>
           </form>
-        </div>
+      </div>
 
-        {/* Instructions */}
-        <div className="card">
-          <h2>File Format Requirements</h2>
+      {/* File Format Requirements */}
+      <div className="card">
+        <h2>File Format Requirements</h2>
           
           <div style={{ marginBottom: '2rem' }}>
             <h3 style={{ color: '#3498db', marginBottom: '1rem' }}>CSV Format</h3>
@@ -383,6 +382,11 @@ const Upload = () => {
             </div>
           </div>
 
+          <div style={{ padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px', border: '1px solid #ffeaa7' }}>
+            <p style={{ margin: 0, color: '#856404', fontSize: '0.9rem' }}>
+              <strong>Tip:</strong> Make sure your file is properly formatted and all required fields are included. 
+              The system will organize your questions into sections automatically based on the section field.
+            </p>
           <div style={{ padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px', border: '1px solid #ffeaa7' }}>
             <p style={{ margin: 0, color: '#856404', fontSize: '0.9rem' }}>
               <strong>Tip:</strong> Make sure your file is properly formatted and all required fields are included. 
