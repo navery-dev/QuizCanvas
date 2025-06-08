@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { ArrowLeft, ArrowRight, CheckCircle, Clock } from 'lucide-react';
 import axios from 'axios';
@@ -8,6 +8,7 @@ const Quiz = () => {
   const { id } = useParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [quiz, setQuiz] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -59,8 +60,15 @@ const Quiz = () => {
         
         // Set timer if quiz has time limit
         if (quizData.time_limit) {
+            const params = new URLSearchParams(location.search);
+            const customTimer = parseInt(params.get('timer'), 10);
+
+            if (!isNaN(customTimer) && customTimer > 0) {
+              setTimeLeft(customTimer * 60);
+            } else if (quizData.time_limit) {
           setTimeLeft(quizData.time_limit * 60);
         }
+      }
         
       } catch (error) {
         if (
@@ -86,7 +94,14 @@ const Quiz = () => {
               setAttemptId(startRes.data.data.attempt_id);
             }
             if (quizData.time_limit) {
-              setTimeLeft(quizData.time_limit * 60);
+              const params = new URLSearchParams(location.search);
+              const customTimer = parseInt(params.get('timer'), 10);
+
+              if (!isNaN(customTimer) && customTimer > 0) {
+                setTimeLeft(customTimer * 60);
+              } else if (quizData.time_limit) {
+                setTimeLeft(quizData.time_limit * 60);
+              }
             }
           } catch (handleErr) {
             console.error('Failed to handle existing attempt:', handleErr);
