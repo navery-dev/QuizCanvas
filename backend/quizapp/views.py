@@ -137,7 +137,7 @@ def register_user(request):
         
         # Check for cancellation flag
         if data.get('action') == 'cancel':
-            # RUN LIVE AUTOMATED TESTS - Test Case ID: 19
+            # RUN TESTS - Test Case ID: 19
             cancellation_tests = RegistrationCancellationTests()
             
             # Test cancellation safety
@@ -421,7 +421,7 @@ def reset_password_request(request):
                 error_code='INVALID_EMAIL'
             )
         
-        # Check if user exists (for security, don't reveal if email exists)
+        # Check if user exists
         try:
             user = Users.objects.get(email=email)
             logger.info(f"Password reset requested for existing user: {email}")
@@ -490,7 +490,7 @@ def reset_password_confirm(request):
                 status=404
             )
         
-        # RUN LIVE TEST - Validate new password strength (MISSING - NOW ADDED)
+        # RUN TEST - Validate new password strength
         user_tests = UserRegistrationTests()
         password_test = user_tests.test_password_strength(new_password)
         if not password_test['success']:
@@ -530,15 +530,28 @@ def reset_password_confirm(request):
 
 # Profile Management
 @csrf_exempt
-@require_http_methods(["PATCH"])
+@require_http_methods(["GET", "PATCH"])
 @jwt_required
 def update_user_profile(request):
     """
     Test Case ID: 3 - Modify User Account Information
-    Update user profile information
+    Get or update user profile information
     """
     try:
         user = request.user
+        
+        # return user profile data
+        if request.method == "GET":
+            return APIResponse.success(
+                data={
+                    'user_id': user.userID,
+                    'username': user.userName,
+                    'email': user.email,
+                    'dateJoined': user.dateJoined.isoformat(),
+                },
+                message='User profile retrieved successfully'
+            )
+        
         data = json.loads(request.body)
         
         # Extract fields to update
@@ -547,7 +560,6 @@ def update_user_profile(request):
         
         updated_fields = []
         
-        # MISSING TEST INTEGRATION - FIX ADDED
         user_tests = UserRegistrationTests()
         
         # Validate and update username if provided
@@ -559,7 +571,7 @@ def update_user_profile(request):
                     error_code='USERNAME_TOO_LONG'
                 )
             
-            # RUN LIVE TEST - Check if username already exists (MISSING - NOW ADDED)
+            # RUN TEST - Check if username already exists
             username_test = user_tests.test_username_already_exists(new_username, user.userID)
             if not username_test['success']:
                 return JsonResponse(username_test, status=400)
@@ -585,7 +597,7 @@ def update_user_profile(request):
                     error_code='INVALID_EMAIL'
                 )
             
-            # RUN LIVE TEST - Check if email already exists (MISSING - NOW ADDED)
+            # RUN TEST - Check if email already exists
             email_test = user_tests.test_email_already_exists(new_email, user.userID)
             if not email_test['success']:
                 return JsonResponse(email_test, status=400)
@@ -604,6 +616,7 @@ def update_user_profile(request):
                         'user_id': user.userID,
                         'username': user.userName,
                         'email': user.email,
+                        'dateJoined': user.dateJoined.isoformat(),
                         'updated_fields': updated_fields
                     },
                     message='Profile updated successfully'
@@ -632,7 +645,7 @@ def update_user_profile(request):
             error_code='SERVER_ERROR',
             status=500
         )
-
+    
 ## File & Quiz Management
 #File Upload
 @csrf_exempt
@@ -652,7 +665,7 @@ def upload_quiz_file(request):
         uploaded_file = request.FILES['file']
         user = request.user
         
-        # RUN COMPREHENSIVE FILE UPLOAD TESTS (ENHANCED)
+        # RUN FILE UPLOAD TESTS
         file_tests = FileUploadTests()
         
         # Test file format validation
@@ -751,7 +764,7 @@ def upload_quiz_file(request):
                     )
                     questions_created.append(question)
                 
-                # RUN FILE CONFIRMATION TESTS (NEW)
+                # RUN FILE CONFIRMATION TESTS
                 confirmation_tests = FileConfirmationTests()
                 confirmation_test = confirmation_tests.test_upload_confirmation_data(
                     file_record.fileID, 
@@ -807,9 +820,6 @@ def upload_quiz_file(request):
 def get_user_quizzes(request):
     """
     Get all quizzes for the authenticated user
-    
-    Returns:
-        JsonResponse with list of user's quizzes
     """
     try:
         user = request.user
@@ -873,7 +883,7 @@ def get_timed_quiz_status(request, attempt_id):
                 status=404
             )
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 17
+        # RUN TESTS - Test Case ID: 17
         timing_tests = TimedQuizTests()
         
         # Test time limit enforcement
@@ -911,18 +921,11 @@ def get_timed_quiz_status(request, attempt_id):
 def get_quiz_details(request, quiz_id):
     """
     Get detailed information about a specific quiz including sections and questions
-    
-    Args:
-        request: HTTP GET request
-        quiz_id: ID of the quiz to retrieve
-    
-    Returns:
-        JsonResponse with quiz details and user progress
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Quiz Access Permission
+        # RUN TESTS - Quiz Access Permission
         quiz_tests = QuizAttemptTests()
         access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
         if not access_test['success']:
@@ -931,7 +934,7 @@ def get_quiz_details(request, quiz_id):
         
         quiz = access_test['quiz']
         
-        # Get sections with questions - optimized query
+        # Get sections with questions
         sections_data = []
         sections = Section.objects.filter(quizID=quiz).prefetch_related('question_set').order_by('sectionName')
         
@@ -955,7 +958,7 @@ def get_quiz_details(request, quiz_id):
                 'questions': questions_data
             })
         
-        # Get user's progress on this quiz - optimized query
+        # Get user's progress on this quiz
         user_progress = Progress.objects.filter(userID=user, quizID=quiz).first()
         user_attempts = QuizAttempt.objects.filter(userID=user, quizID=quiz, completed=True).count()
         
@@ -1006,7 +1009,7 @@ def update_quiz_title(request, quiz_id):
                 error_code='MISSING_TITLE'
             )
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 25 (ENHANCED)
+        # RUN TESTS - Test Case ID: 25
         test_result = run_quiz_title_edit_tests(user.userID, quiz_id, new_title)
         if not test_result['success']:
             status_code = 404 if test_result.get('error_code') == 'QUIZ_NOT_FOUND' else 400
@@ -1066,7 +1069,7 @@ def delete_quiz(request, quiz_id):
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Quiz Access Permission
+        # RUN TESTS - Quiz Access Permission
         quiz_tests = QuizAttemptTests()
         access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
         if not access_test['success']:
@@ -1077,7 +1080,6 @@ def delete_quiz(request, quiz_id):
         quiz_title = quiz.title
         file_record = quiz.fileID
         
-        # ADD: Data integrity validation before deletion
         from .tests import DataIntegrityTests
         integrity_tests = DataIntegrityTests()
         
@@ -1145,18 +1147,11 @@ def get_quiz_sections(request, quiz_id):
     """
     Test Case ID: 31 - Quiz Sections Retrieval
     Get sections for a specific quiz
-    
-    Args:
-        request: HTTP GET request
-        quiz_id: ID of the quiz
-    
-    Returns:
-        JsonResponse with quiz sections and question counts
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Quiz Access Permission
+        # RUN TESTS - Quiz Access Permission
         quiz_tests = QuizAttemptTests()
         access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
         if not access_test['success']:
@@ -1165,7 +1160,7 @@ def get_quiz_sections(request, quiz_id):
         
         quiz = access_test['quiz']
         
-        # Get sections with question counts - optimized query
+        # Get sections with question counts
         sections = Section.objects.filter(quizID=quiz).annotate(
             question_count=Count('question')
         ).order_by('sectionName')
@@ -1202,19 +1197,11 @@ def get_quiz_sections(request, quiz_id):
 def get_section_questions(request, quiz_id, section_id):
     """
     Get questions for a specific section within a quiz
-    
-    Args:
-        request: HTTP GET request
-        quiz_id: ID of the quiz
-        section_id: ID of the section
-    
-    Returns:
-        JsonResponse with section questions
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Quiz Access Permission
+        # RUN TESTS - Quiz Access Permission
         quiz_tests = QuizAttemptTests()
         access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
         if not access_test['success']:
@@ -1275,18 +1262,11 @@ def start_quiz_attempt(request, quiz_id):
     """
     Test Case ID: 32 - Concurrent User Attempts
     Start a new quiz attempt for the authenticated user
-    
-    Args:
-        request: HTTP POST request
-        quiz_id: ID of the quiz to attempt
-    
-    Returns:
-        JsonResponse with attempt details or error message
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 32
+        # RUN TESTS - Test Case ID: 32
         quiz_tests = QuizAttemptTests()
         
         # Test quiz access permission
@@ -1377,7 +1357,6 @@ def get_quiz_question(request, attempt_id, question_number):
                 error_code='ATTEMPT_COMPLETED'
             )
         
-        # ADD: Navigation bounds validation
         from .tests import QuizNavigationTests
         nav_tests = QuizNavigationTests()
         bounds_test = nav_tests.test_quiz_navigation_bounds(attempt_id, question_number)
@@ -1391,7 +1370,7 @@ def get_quiz_question(request, attempt_id, question_number):
         
         total_questions = questions.count()
         
-        # Get the specific question (question_number is 1-based)
+        # Get the specific question
         question = questions[question_number - 1]
         
         # Check if user already answered this question
@@ -1415,7 +1394,7 @@ def get_quiz_question(request, attempt_id, question_number):
                     'percentage': round((question_number / total_questions) * 100, 1)
                 },
                 'previous_answer': existing_answer.selectedOption if existing_answer else None,
-                'navigation': bounds_test.get('navigation_options', {})  # Add navigation info
+                'navigation': bounds_test.get('navigation_options', {})
             }
         )
         
@@ -1445,7 +1424,7 @@ def get_randomized_quiz_questions(request, quiz_id):
             status_code = 404 if access_test.get('error_code') == 'QUIZ_NOT_FOUND' else 403
             return JsonResponse(access_test, status=status_code)
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 13
+        # RUN TESTS - Test Case ID: 13
         randomization_tests = QuestionRandomizationTests()
         randomization_test = randomization_tests.test_question_order_randomization(quiz_id)
         
@@ -1478,14 +1457,6 @@ def submit_quiz_answer(request, attempt_id, question_id):
     """
     Test Case ID: 9 - Answer Quiz Question
     Submit an answer for a quiz question
-    
-    Args:
-        request: HTTP POST request with selected_option and response_time
-        attempt_id: ID of the quiz attempt
-        question_id: ID of the question being answered
-    
-    Returns:
-        JsonResponse with answer validation results
     """
     try:
         user = request.user
@@ -1531,7 +1502,7 @@ def submit_quiz_answer(request, attempt_id, question_id):
                 status=404
             )
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 9
+        # RUN TESTS - Test Case ID: 9
         quiz_tests = QuizAttemptTests()
         answer_test = quiz_tests.test_answer_validation(selected_option, question)
         if not answer_test['success']:
@@ -1590,13 +1561,6 @@ def complete_quiz_attempt(request, attempt_id):
     """
     Test Case ID: 10, 28 - Complete Quiz Attempt and Score Calculation
     Finalize quiz attempt and calculate results
-    
-    Args:
-        request: HTTP POST request
-        attempt_id: ID of the quiz attempt to complete
-    
-    Returns:
-        JsonResponse with quiz results and progress update
     """
     try:
         user = request.user
@@ -1620,7 +1584,7 @@ def complete_quiz_attempt(request, attempt_id):
                 error_code='ATTEMPT_ALREADY_COMPLETED'
             )
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 10, 28
+        # RUN TESTS - Test Case ID: 10, 28
         quiz_tests = QuizAttemptTests()
         score_test = quiz_tests.test_score_calculation(attempt_id)
         if not score_test['success']:
@@ -1703,7 +1667,7 @@ def resume_quiz_attempt(request, attempt_id):
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 37 (ENHANCED)
+        # RUN TESTS - Test Case ID: 37
         test_result = run_quiz_resume_tests(attempt_id, user.userID)
         if not test_result['success']:
             status_code = 404 if test_result.get('error_code') == 'ATTEMPT_NOT_FOUND' else 400
@@ -1786,18 +1750,11 @@ def resume_quiz_attempt(request, attempt_id):
 def get_user_quiz_attempts(request, quiz_id):
     """
     Get all attempts for a specific quiz by the authenticated user
-    
-    Args:
-        request: HTTP GET request
-        quiz_id: ID of the quiz
-    
-    Returns:
-        JsonResponse with user's quiz attempts
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Quiz Access Permission
+        # RUN TESTS - Quiz Access Permission
         quiz_tests = QuizAttemptTests()
         access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
         if not access_test['success']:
@@ -1857,13 +1814,6 @@ def get_user_quiz_attempts(request, quiz_id):
 def get_attempt_details(request, attempt_id):
     """
     Get detailed information about a specific quiz attempt
-    
-    Args:
-        request: HTTP GET request
-        attempt_id: ID of the quiz attempt
-    
-    Returns:
-        JsonResponse with attempt details
     """
     try:
         user = request.user
@@ -1946,18 +1896,11 @@ def get_user_progress(request, quiz_id=None):
     """
     Test Case ID: 11 - Display User Progress Metrics
     Get user's progress data with live validation
-    
-    Args:
-        request: HTTP GET request
-        quiz_id: Optional quiz ID to get specific quiz progress
-    
-    Returns:
-        JsonResponse with user progress data or empty state
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 11
+        # RUN TESTS - Test Case ID: 11
         progress_tests = ProgressTrackingTests()
         
         if quiz_id:
@@ -2066,18 +2009,11 @@ def get_user_progress(request, quiz_id=None):
 def get_quiz_statistics(request, quiz_id):
     """
     Get detailed statistics for a quiz
-    
-    Args:
-        request: HTTP GET request
-        quiz_id: ID of the quiz
-    
-    Returns:
-        JsonResponse with quiz statistics
     """
     try:
         user = request.user
         
-        # RUN LIVE AUTOMATED TESTS - Quiz Access Permission
+        # RUN TESTS - Quiz Access Permission
         quiz_tests = QuizAttemptTests()
         access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
         if not access_test['success']:
@@ -2279,7 +2215,7 @@ def get_quiz_progress_bar(request, attempt_id):
         total_questions = Question.objects.filter(quizID=quiz_attempt.quizID).count()
         answered_questions = Answer.objects.filter(attemptID=quiz_attempt).count()
         
-        # RUN LIVE AUTOMATED TESTS - Test Case ID: 21
+        # RUN TESTS - Test Case ID: 21
         progress_tests = ProgressBarTests()
         
         # Test progress calculation
@@ -2323,9 +2259,6 @@ def get_faq(request):
     """
     Test Case ID: 33 - FAQ Page Access and Navigation
     Get frequently asked questions
-    
-    Returns:
-        JsonResponse with FAQ data
     """
     try:
         faq_data = [
@@ -2395,7 +2328,7 @@ def health_check(request):
     Returns:
         JsonResponse with system health status
     """
-    # RUN LIVE AUTOMATED TESTS
+    # RUN TESTS
     db_tests = DatabaseConnectionTests()
     
     # Test database connection
@@ -2433,7 +2366,7 @@ def check_system_connections(request):
     Check system connection health
     """
     try:
-        # RUN LIVE AUTOMATED TESTS - Test Cases ID: 15, 16
+        # RUN TESTS - Test Cases ID: 15, 16
         s3_tests = S3ConnectionTests()
         ec2_tests = EC2ConnectionTests()
         
