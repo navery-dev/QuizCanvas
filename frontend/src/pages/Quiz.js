@@ -32,20 +32,32 @@ const Quiz = () => {
         setLoading(true);
         
         // Fetch quiz details
-        const quizResponse = await axios.get(`/quizzes/${id}/`);
-        setQuiz(quizResponse.data);
+        const quizResponse = await axios.get(`/api/quizzes/${id}/`);
         
-        // Fetch questions
-        const questionsResponse = await axios.get(`/quizzes/${id}/questions/`);
-        setQuestions(questionsResponse.data);
+        const quizData = quizResponse.data.data.quiz;
+        setQuiz(quizData);
         
-        // Start quiz attempt
-        const attemptResponse = await axios.post(`/quizzes/${id}/start-attempt/`);
-        setAttemptId(attemptResponse.data.attempt_id);
+        // Extract questions from quiz sections
+        const allQuestions = [];
+        if (quizData.sections) {
+          quizData.sections.forEach(section => {
+            section.questions.forEach(question => {
+              allQuestions.push({
+                ...question,
+                section_name: section.name
+              });
+            });
+          });
+        }
+        setQuestions(allQuestions);
+        
+        const attemptResponse = await axios.post(`/api/quizzes/${id}/start/`);
+        
+        setAttemptId(attemptResponse.data.data.attempt_id);
         
         // Set timer if quiz has time limit
-        if (quizResponse.data.time_limit) {
-          setTimeLeft(quizResponse.data.time_limit * 60); // Convert minutes to seconds
+        if (quizData.time_limit) {
+          setTimeLeft(quizData.time_limit * 60);
         }
         
       } catch (error) {
@@ -63,11 +75,9 @@ const Quiz = () => {
     const handleSubmitQuiz = async () => {
       setSubmitting(true);
       try {
-        const response = await axios.post(`/quiz-attempts/${attemptId}/submit/`, {
-          answers: answers
-        });
+        const response = await axios.post(`/api/attempts/${attemptId}/complete/`);
         
-        setResults(response.data);
+        setResults(response.data.data);
         setQuizCompleted(true);
         
       } catch (error) {
@@ -92,11 +102,9 @@ const Quiz = () => {
   const submitQuiz = async () => {
     setSubmitting(true);
     try {
-      const response = await axios.post(`/quiz-attempts/${attemptId}/submit/`, {
-        answers: answers
-      });
-      
-      setResults(response.data);
+      const response = await axios.post(`/api/attempts/${attemptId}/complete/`);
+       
+      setResults(response.data.data);
       setQuizCompleted(true);
       
     } catch (error) {
@@ -107,11 +115,23 @@ const Quiz = () => {
     }
   };
 
-  const handleAnswerChange = (questionId, selectedOption) => {
+  const handleAnswerChange = async (questionId, selectedOption) => {
+    // Update local state
     setAnswers(prev => ({
       ...prev,
       [questionId]: selectedOption
     }));
+
+    // Submit answer to backend immediately
+    try {
+      await axios.post(`/api/attempts/${attemptId}/answer/${questionId}/`, {
+        selected_option: selectedOption,
+        response_time: 5000
+      });
+      console.log(`Answer submitted for question ${questionId}: option ${selectedOption}`);
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+    }
   };
 
   const handleNextQuestion = () => {
