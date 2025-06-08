@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const Quiz = () => {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const [quiz, setQuiz] = useState(null);
@@ -22,6 +22,7 @@ const Quiz = () => {
   const [results, setResults] = useState(null);
 
   useEffect(() => {
+    if (authLoading) return; //check auth before reloading
     if (!isAuthenticated) {
       navigate('/login');
       return;
@@ -69,7 +70,7 @@ const Quiz = () => {
     };
     
     fetchQuizData();
-  }, [id, isAuthenticated, navigate]);
+  }, [id, isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     const handleSubmitQuiz = async () => {
@@ -155,6 +156,25 @@ const Quiz = () => {
   const getProgressPercentage = () => {
     return ((currentQuestionIndex + 1) / questions.length) * 100;
   };
+
+  if (authLoading) {
+    return (
+      <div className="page">
+        <div className="loading" style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="spinner" style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <p>Loading quiz...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
