@@ -282,19 +282,19 @@ const Quiz = () => {
           </div>
           
           <div className="question-text">
-            {currentQuestion.question_text}
+            {currentQuestion.text}
           </div>
 
           <ul className="answer-options">
-            {currentQuestion.answer_options.map((option, index) => (
+            {currentQuestion.options.map((option, index) => (
               <li key={index} className="answer-option">
                 <label>
                   <input
                     type="radio"
-                    name={`question_${currentQuestion.id}`}
+                    name={`question_${currentQuestion.question_id}`}
                     value={index}
-                    checked={answers[currentQuestion.id] === index}
-                    onChange={() => handleAnswerChange(currentQuestion.id, index)}
+                    checked={answers[currentQuestion.question_id] === index}
+                    onChange={() => handleAnswerChange(currentQuestion.question_id, index)}
                   />
                   {option}
                 </label>
@@ -354,13 +354,13 @@ const Quiz = () => {
                   padding: '0.5rem',
                   border: '1px solid #ddd',
                   borderRadius: '4px',
-                  backgroundColor: 
-                    index === currentQuestionIndex ? '#3498db' : 
-                    answers[questions[index].id] !== undefined ? '#27ae60' : 
+                  backgroundColor:
+                    index === currentQuestionIndex ? '#3498db' :
+                    answers[questions[index].question_id] !== undefined ? '#27ae60' : 
                     'white',
-                  color: 
-                    index === currentQuestionIndex ? 'white' : 
-                    answers[questions[index].id] !== undefined ? 'white' : 
+                  color:
+                    index === currentQuestionIndex ? 'white' :
+                    answers[questions[index].question_id] !== undefined ? 'white' : 
                     '#333',
                   cursor: 'pointer',
                   fontSize: '0.9rem'
