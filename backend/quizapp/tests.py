@@ -327,7 +327,7 @@ class FileUploadTests:
                 }
             
             # Clean fieldnames and check for required columns
-            fieldnames = [name.strip().lower() for name in csv_reader.fieldnames if name]
+            fieldnames = [name.strip().replace("\ufeff", "").lower() for name in csv_reader.fieldnames if name]
             required_columns = ['question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer']
             
             missing_columns = [col for col in required_columns if col not in fieldnames]
