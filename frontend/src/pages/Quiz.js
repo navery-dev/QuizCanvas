@@ -117,7 +117,7 @@ const Quiz = () => {
     };
     
     fetchQuizData();
-  }, [id, isAuthenticated, authLoading, navigate]);
+  }, [id, isAuthenticated, authLoading, navigate, location.search]);
 
   useEffect(() => {
     const handleSubmitQuiz = async () => {
