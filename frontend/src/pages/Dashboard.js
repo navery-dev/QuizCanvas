@@ -7,7 +7,7 @@ import axios from 'axios';
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
 
 const Dashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,12 +44,23 @@ const Dashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
+    // Wait for auth loading to complete
+    if (authLoading) {
+      console.log('Auth is still loading, waiting...');
+      return;
+    }
+
+    console.log('Auth loading complete. isAuthenticated:', isAuthenticated);
+    
     if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
+    
+    console.log('User authenticated, fetching dashboard data');
     fetchDashboardData();
-  }, [isAuthenticated, navigate, fetchDashboardData]);
+  }, [isAuthenticated, authLoading, navigate, fetchDashboardData]); // Add authLoading to dependencies
 
   const handleDeleteQuiz = async (quizId) => {
     if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
@@ -77,6 +88,27 @@ const Dashboard = () => {
     });
   };
 
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="page">
+        <div className="loading" style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="spinner" style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <p>Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while dashboard data is being fetched
   if (loading) {
     return (
       <div className="page">
