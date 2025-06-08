@@ -389,12 +389,6 @@ const Upload = () => {
               <strong>Tip:</strong> Make sure your file is properly formatted and all required fields are included. 
               The system will organize your questions into sections automatically based on the section field.
             </p>
-          <div style={{ padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px', border: '1px solid #ffeaa7' }}>
-            <p style={{ margin: 0, color: '#856404', fontSize: '0.9rem' }}>
-              <strong>Tip:</strong> Make sure your file is properly formatted and all required fields are included. 
-              The system will organize your questions into sections automatically based on the section field.
-            </p>
-          </div>
         </div>
       </div>
     </div>

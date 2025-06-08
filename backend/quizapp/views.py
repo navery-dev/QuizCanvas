@@ -21,7 +21,7 @@ import os
 import jwt
 
 from .models import *
-from .utils.file_processors import process_quiz_file
+from .utils.file_processors import *
 from .services.s3_service import get_s3_service
 
 # Configure logging
@@ -665,38 +665,35 @@ def upload_quiz_file(request):
         uploaded_file = request.FILES['file']
         user = request.user
         
-        # RUN FILE UPLOAD TESTS
-        file_tests = FileUploadTests()
+        logger.info(f"Processing file upload: {uploaded_file.name} by user {user.userName}")
         
-        # Test file format validation
-        format_test = file_tests.test_file_format_validation(uploaded_file)
-        if not format_test['success']:
-            return JsonResponse(format_test, status=400)
+        # Run file upload validation tests
+        upload_test_result = run_file_upload_tests(uploaded_file, user)
+        if not upload_test_result['success']:
+            logger.warning(f"File upload test failed: {upload_test_result['error']}")
+            return APIResponse.error(
+                upload_test_result['error'],
+                error_code=upload_test_result.get('error_code', 'UPLOAD_TEST_FAILED'),
+                status=400
+            )
         
-        # Test file size validation
-        size_test = file_tests.test_file_size_validation(uploaded_file)
-        if not size_test['success']:
-            return JsonResponse(size_test, status=400)
+        logger.info("File upload tests passed, proceeding with file processing")
         
-        # Test file content validation
-        content_test = file_tests.test_file_content_validation(uploaded_file)
-        if not content_test['success']:
-            return JsonResponse(content_test, status=400)
-        
-        # Test database save operation
-        db_test = file_tests.test_database_save_operation(None)
-        if not db_test['success']:
-            return JsonResponse(db_test, status=500)
-        
-        # If all tests pass, process the file
+        # Process the file using file processors
         try:
-            logger.info(f"Processing file upload: {uploaded_file.name} by user {user.userName}")
             questions_data, metadata = process_quiz_file(uploaded_file)
+            logger.info(f"File processed successfully: {len(questions_data)} questions found")
         except ValidationError as e:
             error_message = str(e.message) if hasattr(e, 'message') else str(e)
             logger.warning(f"File processing error: {error_message}")
             return APIResponse.error(
                 error_message,
+                error_code='FILE_PROCESSING_ERROR'
+            )
+        except Exception as e:
+            logger.error(f"Unexpected file processing error: {e}")
+            return APIResponse.error(
+                f'File processing failed: {str(e)}',
                 error_code='FILE_PROCESSING_ERROR'
             )
         
@@ -711,20 +708,27 @@ def upload_quiz_file(request):
                     fileType=uploaded_file.name.split('.')[-1].lower()[:4],
                     uploadDate=datetime.now()
                 )
+                logger.info(f"Created file record: {file_record.fileID}")
                 
                 # Upload to S3
-                s3_service = get_s3_service()
-                s3_result = s3_service.upload_quiz_file(
-                    uploaded_file, 
-                    user.userID, 
-                    uploaded_file.name
-                )
-                
-                # Update file record with S3 path
-                file_record.filePath = s3_result['s3_key'][:100]
-                file_record.save()
-                
-                logger.info(f"File uploaded to S3: {s3_result['s3_key']}")
+                try:
+                    s3_service = get_s3_service()
+                    s3_result = s3_service.upload_quiz_file(
+                        uploaded_file, 
+                        user.userID, 
+                        uploaded_file.name
+                    )
+                    
+                    # Update file record with S3 path
+                    file_record.filePath = s3_result['s3_key'][:100]
+                    file_record.save()
+                    
+                    logger.info(f"File uploaded to S3: {s3_result['s3_key']}")
+                    
+                except Exception as s3_error:
+                    logger.error(f"S3 upload failed: {s3_error}")
+                    # S3 is required - fail the upload if S3 fails
+                    raise Exception(f"File storage failed: {str(s3_error)}. S3 upload is required for file processing.")
                 
                 # Create Quiz record
                 quiz_title = request.POST.get('quiz_title', uploaded_file.name.split('.')[0])[:50]
@@ -736,6 +740,7 @@ def upload_quiz_file(request):
                     title=quiz_title,
                     description=quiz_description
                 )
+                logger.info(f"Created quiz: {quiz.quizID}")
                 
                 # Create sections and questions
                 sections_created = {}
@@ -743,7 +748,7 @@ def upload_quiz_file(request):
                 
                 for question_data in questions_data:
                     # Get or create section
-                    section_name = question_data['section'][:50]
+                    section_name = question_data['section'][:50] if question_data['section'] else 'General'
                     if section_name not in sections_created:
                         section, created = Section.objects.get_or_create(
                             quizID=quiz,
@@ -764,6 +769,8 @@ def upload_quiz_file(request):
                     )
                     questions_created.append(question)
                 
+                logger.info(f"Successfully created {len(questions_created)} questions")
+                
                 # RUN FILE CONFIRMATION TESTS
                 confirmation_tests = FileConfirmationTests()
                 confirmation_test = confirmation_tests.test_upload_confirmation_data(
@@ -774,8 +781,6 @@ def upload_quiz_file(request):
                 if not confirmation_test['success']:
                     logger.warning(f"File confirmation test failed: {confirmation_test}")
                 
-                logger.info(f"Successfully processed upload: {len(questions_created)} questions created")
-        
         except Exception as e:
             logger.error(f"Error during file upload processing: {e}")
             return APIResponse.error(
@@ -799,7 +804,8 @@ def upload_quiz_file(request):
                     'key': s3_result['s3_key'],
                     'size': s3_result['file_size']
                 },
-                'confirmation': confirmation_data
+                'confirmation': confirmation_data,
+                'tests_passed': upload_test_result['success']
             },
             message='File uploaded and processed successfully',
             status=201
@@ -1080,7 +1086,6 @@ def delete_quiz(request, quiz_id):
         quiz_title = quiz.title
         file_record = quiz.fileID
         
-        from .tests import DataIntegrityTests
         integrity_tests = DataIntegrityTests()
         
         # Test cascade analysis
@@ -1357,7 +1362,6 @@ def get_quiz_question(request, attempt_id, question_number):
                 error_code='ATTEMPT_COMPLETED'
             )
         
-        from .tests import QuizNavigationTests
         nav_tests = QuizNavigationTests()
         bounds_test = nav_tests.test_quiz_navigation_bounds(attempt_id, question_number)
         if not bounds_test['success']:

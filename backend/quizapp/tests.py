@@ -317,15 +317,28 @@ class FileUploadTests:
             
             # Try to parse CSV
             csv_reader = csv.DictReader(StringIO(file_content))
-            required_columns = ['question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'section']
             
-            if not all(col in csv_reader.fieldnames for col in required_columns):
-                missing_columns = [col for col in required_columns if col not in csv_reader.fieldnames]
+            # Check if fieldnames exist
+            if csv_reader.fieldnames is None:
+                return {
+                    'success': False,
+                    'error': 'CSV file has no headers or is malformed',
+                    'error_code': 'INVALID_CSV_FORMAT'
+                }
+            
+            # Clean fieldnames and check for required columns
+            fieldnames = [name.strip().lower() for name in csv_reader.fieldnames if name]
+            required_columns = ['question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer']
+            
+            missing_columns = [col for col in required_columns if col not in fieldnames]
+            
+            if missing_columns:
                 return {
                     'success': False,
                     'error': f'CSV missing required columns: {", ".join(missing_columns)}',
                     'error_code': 'INVALID_CSV_FORMAT',
-                    'missing_columns': missing_columns
+                    'missing_columns': missing_columns,
+                    'found_columns': fieldnames
                 }
             
             # Validate at least one row exists
@@ -353,26 +366,69 @@ class FileUploadTests:
             import json
             data = json.loads(file_content)
             
-            # Validate JSON structure
-            if not isinstance(data, dict):
+            # Accept both array of questions and object with questions array
+            if isinstance(data, list):
+                if not data:
+                    return {
+                        'success': False,
+                        'error': 'JSON array is empty',
+                        'error_code': 'EMPTY_JSON_ARRAY'
+                    }
+                
+                # Check if first item looks like a question
+                first_item = data[0]
+                if not isinstance(first_item, dict):
+                    return {
+                        'success': False,
+                        'error': 'JSON array must contain question objects',
+                        'error_code': 'INVALID_JSON_STRUCTURE'
+                    }
+                
+                required_fields = ['question', 'options', 'correct_answer']
+                missing_fields = [field for field in required_fields if field not in first_item]
+                
+                if missing_fields:
+                    return {
+                        'success': False,
+                        'error': f'Question objects missing required fields: {", ".join(missing_fields)}',
+                        'error_code': 'MISSING_JSON_FIELDS',
+                        'missing_fields': missing_fields
+                    }
+                
+                return {'success': True, 'question_count': len(data)}
+                
+            elif isinstance(data, dict):
+                # Object with questions array - also valid
+                if 'questions' not in data:
+                    return {
+                        'success': False,
+                        'error': 'JSON object must contain "questions" array',
+                        'error_code': 'MISSING_JSON_FIELDS',
+                        'missing_fields': ['questions']
+                    }
+                
+                if not isinstance(data['questions'], list):
+                    return {
+                        'success': False,
+                        'error': '"questions" must be an array',
+                        'error_code': 'INVALID_JSON_STRUCTURE'
+                    }
+                
+                if not data['questions']:
+                    return {
+                        'success': False,
+                        'error': 'Questions array is empty',
+                        'error_code': 'EMPTY_JSON_ARRAY'
+                    }
+                
+                return {'success': True, 'question_count': len(data['questions'])}
+            
+            else:
                 return {
                     'success': False,
-                    'error': 'JSON must be an object, not an array or primitive',
+                    'error': 'JSON must be an array of questions or an object with "questions" array',
                     'error_code': 'INVALID_JSON_STRUCTURE'
                 }
-            
-            required_fields = ['quiz_title', 'sections']
-            missing_fields = [field for field in required_fields if field not in data]
-            
-            if missing_fields:
-                return {
-                    'success': False,
-                    'error': f'JSON missing required fields: {", ".join(missing_fields)}',
-                    'error_code': 'MISSING_JSON_FIELDS',
-                    'missing_fields': missing_fields
-                }
-            
-            return {'success': True}
             
         except json.JSONDecodeError as e:
             return {
@@ -396,6 +452,87 @@ class FileUploadTests:
                 'error_code': 'DB_SAVE_ERROR'
             }
 
+class FileConfirmationTests:
+    """Test Case ID: 20 - File Upload Confirmation Process"""
+    
+    @staticmethod
+    def test_upload_confirmation_data(file_id, user_id):
+        """Test if file upload confirmation contains correct data"""
+        try:
+            # Verify file record exists
+            try:
+                file_record = File.objects.get(fileID=file_id, userID=user_id)
+            except File.DoesNotExist:
+                return {
+                    'success': False,
+                    'error': 'File record not found',
+                    'error_code': 'FILE_NOT_FOUND'
+                }
+            
+            # Verify associated quiz was created
+            try:
+                quiz = Quiz.objects.get(fileID=file_record)
+                sections = Section.objects.filter(quizID=quiz)
+                questions = Question.objects.filter(quizID=quiz)
+                
+                confirmation_data = {
+                    'file_id': file_record.fileID,
+                    'file_name': file_record.fileName,
+                    'file_type': file_record.fileType,
+                    'upload_date': file_record.uploadDate.isoformat(),
+                    'quiz_id': quiz.quizID,
+                    'quiz_title': quiz.title,
+                    'total_sections': sections.count(),
+                    'total_questions': questions.count(),
+                    's3_path': file_record.filePath
+                }
+                
+                return {
+                    'success': True,
+                    'confirmation_data': confirmation_data,
+                    'message': 'Upload confirmation data validated'
+                }
+                
+            except Quiz.DoesNotExist:
+                return {
+                    'success': False,
+                    'error': 'Associated quiz not found after upload',
+                    'error_code': 'QUIZ_NOT_CREATED'
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Upload confirmation test failed: {str(e)}',
+                'error_code': 'CONFIRMATION_ERROR'
+            }
+
+# utility function for file upload tests
+def run_file_upload_tests(file, user=None):
+    """Run all file upload-related tests with comprehensive validation"""
+    tests = FileUploadTests()
+    
+    # Test file type
+    type_test = tests.test_file_type_validation(file)
+    if not type_test['success']:
+        return type_test
+    
+    # Test file size
+    size_test = tests.test_file_size_validation(file)
+    if not size_test['success']:
+        return size_test
+     
+    # Test file content validation
+    content_test = tests.test_file_content_validation(file)
+    if not content_test['success']:
+        return content_test
+    
+    # Test database connectivity
+    db_test = tests.test_database_save_operation(None)
+    if not db_test['success']:
+        return db_test
+    
+    return {'success': True, 'message': 'All file upload tests passed'}
 
 class QuizAttemptTests:
     """
