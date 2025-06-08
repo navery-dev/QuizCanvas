@@ -29,8 +29,9 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/start/', views.start_quiz_attempt, name='start_quiz_attempt'),  
     path('attempts/<int:attempt_id>/question/<int:question_number>/', views.get_quiz_question, name='get_quiz_question'),  
     path('attempts/<int:attempt_id>/answer/<int:question_id>/', views.submit_quiz_answer, name='submit_quiz_answer'), 
-    path('attempts/<int:attempt_id>/complete/', views.complete_quiz_attempt, name='complete_quiz_attempt'),  
-    path('attempts/<int:attempt_id>/resume/', views.resume_quiz_attempt, name='resume_quiz_attempt'),  
+    path('attempts/<int:attempt_id>/complete/', views.complete_quiz_attempt, name='complete_quiz_attempt'),
+    path('attempts/<int:attempt_id>/resume/', views.resume_quiz_attempt, name='resume_quiz_attempt'),
+    path('attempts/<int:attempt_id>/end/', views.end_quiz_attempt, name='end_quiz_attempt'),
     path('attempts/<int:attempt_id>/timer/', views.get_timed_quiz_status, name='timed_quiz_status'),  
     path('attempts/<int:attempt_id>/progress/', views.get_quiz_progress_bar, name='quiz_progress_bar'),  
     

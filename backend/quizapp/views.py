@@ -1768,6 +1768,46 @@ def resume_quiz_attempt(request, attempt_id):
             status=500
         )
 
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def end_quiz_attempt(request, attempt_id):
+    """End an incomplete quiz attempt without scoring"""
+    try:
+        user = request.user
+
+        try:
+            quiz_attempt = QuizAttempt.objects.get(
+                attemptID=attempt_id,
+                userID=user,
+                completed=False
+            )
+        except QuizAttempt.DoesNotExist:
+            return APIResponse.error(
+                'Quiz attempt not found',
+                error_code='ATTEMPT_NOT_FOUND',
+                status=404
+            )
+
+        with transaction.atomic():
+            quiz_attempt.completed = True
+            quiz_attempt.endTime = timezone.now()
+            quiz_attempt.score = None
+            quiz_attempt.save()
+
+        return APIResponse.success(
+            data={'attempt_id': attempt_id},
+            message='Quiz attempt ended'
+        )
+
+    except Exception as e:
+        logger.error(f"Error ending quiz attempt: {e}")
+        return APIResponse.error(
+            'Internal server error',
+            error_code='SERVER_ERROR',
+            status=500
+        )
+
 # Quiz History
 
 @csrf_exempt

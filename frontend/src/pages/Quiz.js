@@ -62,8 +62,39 @@ const Quiz = () => {
         }
         
       } catch (error) {
-        console.error('Failed to fetch quiz data:', error);
-        setError('Failed to load quiz');
+        if (
+          error.response &&
+          error.response.status === 409 &&
+          error.response.data?.error_code === 'CONCURRENT_ATTEMPT'
+        ) {
+          const existingId = error.response.data.existing_attempt_id;
+          const resume = window.confirm(
+            'You have an incomplete attempt for this quiz.\nPress OK to resume it or Cancel to start a new attempt.'
+          );
+
+          try {
+            if (resume) {
+              const res = await axios.post(`/api/attempts/${existingId}/resume/`);
+              setAttemptId(res.data.data.attempt_id);
+              if (res.data.data.next_question) {
+                setCurrentQuestionIndex(res.data.data.next_question.question_number - 1);
+              }
+            } else {
+              await axios.post(`/api/attempts/${existingId}/end/`);
+              const startRes = await axios.post(`/api/quizzes/${id}/start/`);
+              setAttemptId(startRes.data.data.attempt_id);
+            }
+            if (quizData.time_limit) {
+              setTimeLeft(quizData.time_limit * 60);
+            }
+          } catch (handleErr) {
+            console.error('Failed to handle existing attempt:', handleErr);
+            setError('Failed to load quiz');
+          }
+        } else {
+          console.error('Failed to fetch quiz data:', error);
+          setError('Failed to load quiz');
+        }        
       } finally {
         setLoading(false);
       }
