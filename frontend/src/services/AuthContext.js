@@ -21,12 +21,10 @@ axios.defaults.baseURL = API_BASE_URL;
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user'); 
-    setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
   };
@@ -47,21 +45,19 @@ export const AuthProvider = ({ children }) => {
             try {
               const userData = JSON.parse(storedUser);
               setUser(userData);
-              setToken(storedToken);
             } catch (error) {
               console.error('Error parsing stored user data:', error);
               // If stored user data is corrupted, try to verify token with backend
               try {
                 const response = await axios.get('/api/dashboard/');
                 if (response.data.success) {
-                  // Token is valid, get user data
+                  // Token is valid, reconstruct user data from any available source
                   const userData = {
                     username: response.data.data?.user?.username || 'User',
                     email: response.data.data?.user?.email || '',
                     user_id: response.data.data?.user?.user_id || null
                   };
                   setUser(userData);
-                  setToken(storedToken);
                   localStorage.setItem('user', JSON.stringify(userData));
                 } else {
                   logout();
@@ -72,7 +68,7 @@ export const AuthProvider = ({ children }) => {
               }
             }
           } else {
-            // token verify
+            // No stored user data, but we have a token - verify it
             try {
               const response = await axios.get('/api/dashboard/');
               if (response.data.success) {
@@ -83,7 +79,6 @@ export const AuthProvider = ({ children }) => {
                   user_id: response.data.data?.user?.user_id || null
                 };
                 setUser(userData);
-                setToken(storedToken);
                 localStorage.setItem('user', JSON.stringify(userData));
               } else {
                 logout();
@@ -125,7 +120,6 @@ export const AuthProvider = ({ children }) => {
         
         localStorage.setItem('token', authToken);
         localStorage.setItem('user', JSON.stringify(userData));
-        setToken(authToken);
         setUser(userData);
         axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
         
