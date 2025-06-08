@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.core.validators import validate_email
 from django.utils import timezone
 from django.conf import settings
+from django.test import TestCase, Client
 import jwt
 from datetime import datetime
 import re
@@ -3006,3 +3007,33 @@ def run_quiz_resume_tests(attempt_id, user_id):
         'progress_percentage': progress_test.get('progress_percentage', 0),
         'message': 'Quiz resume tests completed'
     }
+
+class UpdateQuizDescriptionViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user1 = Users.objects.create(userName='owner', email='owner@example.com', password='pass')
+        self.user2 = Users.objects.create(userName='other', email='other@example.com', password='pass')
+        file = File.objects.create(userID=self.user1, fileName='f.csv', filePath='path.csv', fileType='csv')
+        self.quiz = Quiz.objects.create(fileID=file, title='My Quiz', description='Old')
+        self.token1 = generate_jwt_token(self.user1)
+        self.token2 = generate_jwt_token(self.user2)
+
+    def test_unauthorized_user_cannot_edit(self):
+        response = self.client.patch(
+            f'/api/quizzes/{self.quiz.quizID}/update-description/',
+            data=json.dumps({'description': 'New'}),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.token2}'
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_valid_update_changes_description(self):
+        response = self.client.patch(
+            f'/api/quizzes/{self.quiz.quizID}/update-description/',
+            data=json.dumps({'description': 'Updated'}),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.token1}'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.quiz.refresh_from_db()
+        self.assertEqual(self.quiz.description, 'Updated')

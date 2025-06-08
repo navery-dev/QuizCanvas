@@ -1087,6 +1087,55 @@ def update_quiz_title(request, quiz_id):
         )
 
 @csrf_exempt
+@require_http_methods(["PATCH"])
+@jwt_required
+def update_quiz_description(request, quiz_id):
+    """Update quiz description and optionally title"""
+    try:
+        user = request.user
+        data = json.loads(request.body)
+
+        new_description = data.get('description')
+        new_title = data.get('title')
+
+        quiz_tests = QuizAttemptTests()
+        access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
+        if not access_test['success']:
+            status_code = 404 if access_test.get('error_code') == 'QUIZ_NOT_FOUND' else 403
+            return JsonResponse(access_test, status=status_code)
+
+        quiz = access_test['quiz']
+
+        if new_description is not None:
+            quiz.description = new_description.strip()
+        if new_title is not None:
+            quiz.title = new_title.strip()
+
+        quiz.save()
+
+        return APIResponse.success(
+            data={
+                'quiz_id': quiz.quizID,
+                'title': quiz.title,
+                'description': quiz.description,
+            },
+            message='Quiz details updated successfully',
+        )
+
+    except json.JSONDecodeError:
+        return APIResponse.error(
+            'Invalid JSON data',
+            error_code='INVALID_JSON'
+        )
+    except Exception as e:
+        logger.error(f"Error in update quiz description: {e}")
+        return APIResponse.error(
+            'Internal server error',
+            error_code='SERVER_ERROR',
+            status=500
+        )
+
+@csrf_exempt
 @require_http_methods(["DELETE"])
 @jwt_required  
 def delete_quiz(request, quiz_id):
