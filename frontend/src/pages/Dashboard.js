@@ -177,40 +177,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Stats Overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ textAlign: 'center' }}>
-          <BookOpen size={32} style={{ color: '#3498db', marginBottom: '0.5rem' }} />
-          <h3 style={{ margin: '0.5rem 0' }}>{dashboardData?.stats?.total_quizzes || 0}</h3>
-          <p style={{ color: '#7f8c8d', margin: 0 }}>Total Quizzes</p>
-        </div>
-        
-        <div className="card" style={{ textAlign: 'center' }}>
-          <Clock size={32} style={{ color: '#27ae60', marginBottom: '0.5rem' }} />
-          <h3 style={{ margin: '0.5rem 0' }}>{dashboardData?.stats?.total_attempts || 0}</h3>
-          <p style={{ color: '#7f8c8d', margin: 0 }}>Total Attempts</p>
-        </div>
-        
-        <div className="card" style={{ textAlign: 'center' }}>
-          <BarChart3 size={32} style={{ color: '#e74c3c', marginBottom: '0.5rem' }} />
-          <h3 style={{ margin: '0.5rem 0' }}>
-            {dashboardData?.stats?.best_score || 0}%
-          </h3>
-          <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
-        </div>
-
-        {dashboardData?.stats?.total_attempts > 0 && (
-          <div className="card" style={{ textAlign: 'center' }}>
-            <TrendingUp size={32} style={{ color: '#9b59b6', marginBottom: '0.5rem' }} />
-            <h3 style={{ margin: '0.5rem 0' }}>
-              {Object.entries(dashboardData?.stats?.mastery_distribution || {})
-                .reduce((max, [level, count]) => count > max.count ? {level, count} : max, {level: 'Beginner', count: 0}).level}
-            </h3>
-            <p style={{ color: '#7f8c8d', margin: 0 }}>Top Mastery Level</p>
-          </div>
-        )}
-      </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: isNewUser ? '1fr' : '2fr 1fr', gap: '2rem' }}>
         {/* My Quizzes */}
         <div>

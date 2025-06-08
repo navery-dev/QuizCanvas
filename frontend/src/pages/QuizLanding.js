@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { BookOpen, Clock, BarChart3, PlayCircle } from 'lucide-react';
+import { BookOpen, Clock, BarChart3, PlayCircle, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
@@ -13,6 +13,7 @@ const QuizLanding = () => {
 
   const [quiz, setQuiz] = useState(null);
   const [stats, setStats] = useState(null);
+  const [masteryLevel, setMasteryLevel] = useState('Not Started');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timerMinutes, setTimerMinutes] = useState('');
@@ -34,6 +35,9 @@ const QuizLanding = () => {
 
         if (detailsRes.data.success) {
           setQuiz(detailsRes.data.data.quiz);
+          if (detailsRes.data.data.user_progress) {
+            setMasteryLevel(detailsRes.data.data.user_progress.mastery_level || 'Not Started');
+          }
         }
         if (statsRes.data.success) {
           setStats(statsRes.data.data);
@@ -94,6 +98,12 @@ const QuizLanding = () => {
           <BarChart3 size={32} style={{ color: '#e74c3c', marginBottom: '0.5rem' }} />
           <h3 style={{ margin: '0.5rem 0' }}>{stats?.user_stats?.best_score || 0}%</h3>
           <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
+        </div>
+
+        <div className="card" style={{ textAlign: 'center' }}>
+          <TrendingUp size={32} style={{ color: '#9b59b6', marginBottom: '0.5rem' }} />
+          <h3 style={{ margin: '0.5rem 0' }}>{masteryLevel}</h3>
+          <p style={{ color: '#7f8c8d', margin: 0 }}>Mastery Level</p>
         </div>
       </div>
 
