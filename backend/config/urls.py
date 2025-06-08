@@ -11,6 +11,7 @@ def api_root(request):
         'available_endpoints': [
             '/api/auth/register/',
             '/api/auth/login/',
+            '/api/quizzes/',
             '/api/health/',
             '/admin/'
         ]
@@ -18,6 +19,5 @@ def api_root(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('quizapp.urls')),
-    path('api/', api_root),
+    path('api/', include('quizapp.urls')),
 ]
