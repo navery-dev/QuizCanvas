@@ -122,19 +122,19 @@ const Quiz = () => {
   useEffect(() => {
 
     if (timeLeft > 0 && !quizCompleted) {
-      const interval = setInterval(() => {
+      const timer = setInterval(() => {
         setTimeLeft(prev => {
           const newTime = prev - 1;
           if (newTime === 0) {
-            clearInterval(interval);
+            clearInterval(timer);
             submitQuiz();
           }
           return newTime;
         });
       }, 1000);
-      return () => clearInterval(interval);
+      return () => clearInterval(timer);
     }
-    return () => clearInterval(interval);
+    return undefined;
   }, [timeLeft, quizCompleted, attemptId]);
 
   const submitQuiz = async () => {
