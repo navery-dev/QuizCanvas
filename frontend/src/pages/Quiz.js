@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { ArrowLeft, ArrowRight, CheckCircle, Clock } from 'lucide-react';
@@ -21,6 +21,24 @@ const Quiz = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [results, setResults] = useState(null);
+
+  const submitQuiz = useCallback(async () => {
+    if (!attemptId) return;
+    
+    setSubmitting(true);
+    try {
+      const response = await axios.post(`/api/attempts/${attemptId}/complete/`);
+       
+      setResults(response.data.data);
+      setQuizCompleted(true);
+      
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      setError('Failed to submit quiz');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [attemptId]);
 
   useEffect(() => {
     if (authLoading) return; //check auth before reloading
@@ -120,7 +138,6 @@ const Quiz = () => {
   }, [id, isAuthenticated, authLoading, navigate, location.search]);
 
   useEffect(() => {
-
     if (timeLeft > 0 && !quizCompleted) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
@@ -135,23 +152,7 @@ const Quiz = () => {
       return () => clearInterval(timer);
     }
     return undefined;
-  }, [timeLeft, quizCompleted, attemptId]);
-
-  const submitQuiz = async () => {
-    setSubmitting(true);
-    try {
-      const response = await axios.post(`/api/attempts/${attemptId}/complete/`);
-       
-      setResults(response.data.data);
-      setQuizCompleted(true);
-      
-    } catch (error) {
-      console.error('Failed to submit quiz:', error);
-      setError('Failed to submit quiz');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  }, [timeLeft, quizCompleted, submitQuiz]); // Added submitQuiz to dependency array
 
   const handleAnswerChange = async (questionId, selectedOption) => {
     // Update local state
