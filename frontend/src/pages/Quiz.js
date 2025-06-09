@@ -120,32 +120,22 @@ const Quiz = () => {
   }, [id, isAuthenticated, authLoading, navigate, location.search]);
 
   useEffect(() => {
-    const handleSubmitQuiz = async () => {
-      setSubmitting(true);
-      try {
-        const response = await axios.post(`/api/attempts/${attemptId}/complete/`);
-        
-        setResults(response.data.data);
-        setQuizCompleted(true);
-        
-      } catch (error) {
-        console.error('Failed to submit quiz:', error);
-        setError('Failed to submit quiz');
-      } finally {
-        setSubmitting(false);
-      }
-    };
 
-    let interval = null;
     if (timeLeft > 0 && !quizCompleted) {
-      interval = setInterval(() => {
-        setTimeLeft(timeLeft - 1);
+      const interval = setInterval(() => {
+        setTimeLeft(prev => {
+          const newTime = prev - 1;
+          if (newTime === 0) {
+            clearInterval(interval);
+            submitQuiz();
+          }
+          return newTime;
+        });
       }, 1000);
-    } else if (timeLeft === 0) {
-      handleSubmitQuiz();
+      return () => clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [timeLeft, quizCompleted, attemptId, answers]);
+  }, [timeLeft, quizCompleted, attemptId]);
 
   const submitQuiz = async () => {
     setSubmitting(true);
@@ -247,6 +237,10 @@ const Quiz = () => {
   }
 
   if (quizCompleted && results) {
+    const incorrect =
+      results.incorrect_answers !== undefined
+        ? results.incorrect_answers
+        : results.total_questions - results.correct_answers;
     return (
       <div className="page">
         <div className="quiz-container">
@@ -263,7 +257,7 @@ const Quiz = () => {
                 <p style={{ color: '#7f8c8d', margin: 0 }}>Correct</p>
               </div>
               <div>
-                <h3 style={{ color: '#e74c3c', margin: '0.5rem 0' }}>{results.incorrect_answers}</h3>
+                <h3 style={{ color: '#e74c3c', margin: '0.5rem 0' }}>{incorrect}</h3>
                 <p style={{ color: '#7f8c8d', margin: 0 }}>Incorrect</p>
               </div>
               <div>

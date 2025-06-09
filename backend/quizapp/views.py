@@ -1730,6 +1730,7 @@ def complete_quiz_attempt(request, attempt_id):
         score = score_test['score']
         correct_answers = score_test['correct_answers']
         total_questions = score_test['total_questions']
+        incorrect_answers = total_questions - correct_answers
         
         # Calculate mastery level
         progress_tests = ProgressTrackingTests()
@@ -1775,6 +1776,7 @@ def complete_quiz_attempt(request, attempt_id):
             data={
                 'score': round(score, 1),
                 'correct_answers': correct_answers,
+                'incorrect_answers': incorrect_answers,
                 'total_questions': total_questions,
                 'time_taken': str(quiz_attempt.endTime - quiz_attempt.startTime),
                 'mastery_level': mastery_level,
