@@ -250,9 +250,34 @@ const QuizLanding = () => {
           <div key={q.question_id} style={{ marginBottom: '1rem' }}>
             {editingQuestion && editingQuestion.question_id === q.question_id ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <input type="text" value={qText} onChange={(e) => setQText(e.target.value)} />
-                <input type="text" value={qOptions} onChange={(e) => setQOptions(e.target.value)} placeholder="Options comma separated" />
-                <input type="number" value={qAnswer} onChange={(e) => setQAnswer(e.target.value)} />
+                <div className="form-group">
+                  <label htmlFor="qText">Question</label>
+                  <input
+                    id="qText"
+                    type="text"
+                    value={qText}
+                    onChange={(e) => setQText(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="qOptions">Options</label>
+                  <input
+                    id="qOptions"
+                    type="text"
+                    value={qOptions}
+                    onChange={(e) => setQOptions(e.target.value)}
+                    placeholder="Options comma separated"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="qAnswer">Answer Index</label>
+                  <input
+                    id="qAnswer"
+                    type="number"
+                    value={qAnswer}
+                    onChange={(e) => setQAnswer(e.target.value)}
+                  />
+                </div>
                 {qError && <p className="error-message">{qError}</p>}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button onClick={saveQuestionEdits} disabled={qSaving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
