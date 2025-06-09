@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { BookOpen, Clock, BarChart3, PlayCircle, TrendingUp } from 'lucide-react';
+import { BookOpen, Clock, BarChart3, PlayCircle, TrendingUp, Edit2, X, Check } from 'lucide-react';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
@@ -17,6 +17,11 @@ const QuizLanding = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timerMinutes, setTimerMinutes] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editError, setEditError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -35,6 +40,8 @@ const QuizLanding = () => {
 
         if (detailsRes.data.success) {
           setQuiz(detailsRes.data.data.quiz);
+          setEditTitle(detailsRes.data.data.quiz.title);
+          setEditDescription(detailsRes.data.data.quiz.description || '');
           if (detailsRes.data.data.user_progress) {
             setMasteryLevel(detailsRes.data.data.user_progress.mastery_level || 'Not Started');
           }
@@ -58,6 +65,34 @@ const QuizLanding = () => {
     navigate(url);
   };
 
+    const saveEdits = async () => {
+    try {
+      setSaving(true);
+      setEditError('');
+      const response = await axios.patch(`/api/quizzes/${id}/update-description/`, {
+        title: editTitle,
+        description: editDescription,
+      });
+      if (response.data.success) {
+        setQuiz(prev => ({ ...prev, title: response.data.data.title, description: response.data.data.description }));
+        setEditMode(false);
+      } else {
+        setEditError(response.data.error || 'Failed to update quiz');
+      }
+    } catch (err) {
+      setEditError(err.response?.data?.error || 'Failed to update quiz');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelEdits = () => {
+    setEditTitle(quiz.title);
+    setEditDescription(quiz.description || '');
+    setEditError('');
+    setEditMode(false);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="page">
@@ -78,8 +113,42 @@ const QuizLanding = () => {
 
   return (
     <div className="page">
-      <h1>{quiz?.title}</h1>
-      <p style={{ color: '#7f8c8d', marginBottom: '2rem' }}>{quiz?.description}</p>
+      {editMode ? (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Title"
+            />
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Description"
+            />
+            {editError && <p className="error-message">{editError}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={saveEdits} disabled={saving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={16} /> Save
+              </button>
+              <button onClick={cancelEdits} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <X size={16} /> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {quiz?.title}
+            <button onClick={() => setEditMode(true)} className="btn" style={{ padding: '0.25rem' }} title="Edit quiz">
+              <Edit2 size={16} />
+            </button>
+          </h1>
+          <p style={{ color: '#7f8c8d', marginBottom: '2rem' }}>{quiz?.description}</p>
+        </>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <div className="card" style={{ textAlign: 'center' }}>

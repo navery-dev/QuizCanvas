@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { Plus, BookOpen, BarChart3, Clock, Trash2, Upload, FileText } from 'lucide-react';
+import { Plus, BookOpen, BarChart3, Clock, Trash2, Upload, FileText, Edit2 } from 'lucide-react';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
@@ -218,12 +218,20 @@ const Dashboard = () => {
                         <span> • Uploaded {formatDate(quiz.upload_date)}</span>
                       </div>
                     </div>
+                    <Link
+                      to={`/quiz/${quiz.quiz_id}`}
+                      className="btn"
+                      style={{ padding: '0.5rem', marginLeft: '1rem' }}
+                      title="Edit quiz"
+                    >
+                      <Edit2 size={16} />
+                    </Link>
                     <button
                       onClick={() => handleDeleteQuiz(quiz.quiz_id)}
                       className="btn"
-                      style={{ 
-                        padding: '0.5rem', 
-                        marginLeft: '1rem',
+                      style={{
+                        padding: '0.5rem',
+                        marginLeft: '0.5rem',
                         background: '#e74c3c',
                         color: 'white',
                         border: 'none'
