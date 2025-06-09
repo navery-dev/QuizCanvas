@@ -79,6 +79,12 @@ const Quiz = () => {
         const params = new URLSearchParams(location.search);
         const customTimer = parseInt(params.get('timer'), 10);
         
+        if (!isNaN(customTimer) && customTimer > 0) {
+          setTimeLeft(customTimer * 60);
+        } else if (quizData && quizData.time_limit) {
+          setTimeLeft(quizData.time_limit * 60);
+        }
+        
       } catch (error) {
         if (
           error.response &&
