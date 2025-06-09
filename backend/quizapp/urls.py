@@ -23,7 +23,8 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/sections/<int:section_id>/questions/', views.get_section_questions, name='get_section_questions'),
     path('quizzes/<int:quiz_id>/update-title/', views.update_quiz_title, name='update_quiz_title'),
     path('quizzes/<int:quiz_id>/update-description/', views.update_quiz_description, name='update_quiz_description'),
-    path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),  
+    path('quizzes/<int:quiz_id>/questions/<int:question_id>/update/', views.update_question, name='update_question'),
+    path('quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'), 
     path('quizzes/<int:quiz_id>/randomized/', views.get_randomized_quiz_questions, name='randomized_questions'),  
     
     # Quiz Taking

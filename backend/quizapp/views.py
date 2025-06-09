@@ -975,6 +975,7 @@ def get_quiz_details(request, quiz_id):
                     'question_id': question.questionID,
                     'text': question.questionText,
                     'options': question.answerOptions,
+                    'answer_index': question.answerIndex,
                     'section': section.sectionName
                 })
             
@@ -1134,6 +1135,65 @@ def update_quiz_description(request, quiz_id):
             error_code='SERVER_ERROR',
             status=500
         )
+
+@csrf_exempt
+@require_http_methods(["PATCH"])
+@jwt_required
+def update_question(request, quiz_id, question_id):
+    """Update a question's text, options, and answer index"""
+    try:
+        user = request.user
+        data = json.loads(request.body)
+
+        quiz_tests = QuizAttemptTests()
+        access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
+        if not access_test['success']:
+            status_code = 404 if access_test.get('error_code') == 'QUIZ_NOT_FOUND' else 403
+            return JsonResponse(access_test, status=status_code)
+
+        quiz = access_test['quiz']
+
+        try:
+            question = Question.objects.get(questionID=question_id, quizID=quiz)
+        except Question.DoesNotExist:
+            return APIResponse.error('Question not found', error_code='QUESTION_NOT_FOUND', status=404)
+
+        text = data.get('questionText')
+        options = data.get('answerOptions')
+        index = data.get('answerIndex')
+
+        if text is not None:
+            question.questionText = str(text).strip()
+
+        if options is not None:
+            if not isinstance(options, list) or not options:
+                return APIResponse.error('answerOptions must be a non-empty list', error_code='INVALID_OPTIONS')
+            question.answerOptions = options
+            if index is not None and (not isinstance(index, int) or index < 0 or index >= len(options)):
+                return APIResponse.error('answerIndex out of range', error_code='INVALID_INDEX')
+
+        if index is not None:
+            if not isinstance(index, int) or index < 0 or index >= len(question.answerOptions):
+                return APIResponse.error('answerIndex out of range', error_code='INVALID_INDEX')
+            question.answerIndex = index
+
+        question.save()
+
+        return APIResponse.success(
+            data={
+                'question_id': question.questionID,
+                'questionText': question.questionText,
+                'answerOptions': question.answerOptions,
+                'answerIndex': question.answerIndex,
+            },
+            message='Question updated successfully'
+        )
+
+    except json.JSONDecodeError:
+        return APIResponse.error('Invalid JSON data', error_code='INVALID_JSON')
+    except Exception as e:
+        logger.error(f"Error updating question: {e}")
+        return APIResponse.error('Internal server error', error_code='SERVER_ERROR', status=500)
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
@@ -1305,6 +1365,7 @@ def get_section_questions(request, quiz_id, section_id):
                 'question_id': question.questionID,
                 'text': question.questionText,
                 'options': question.answerOptions,
+                'answer_index': question.answerIndex,
                 'option_count': len(question.answerOptions)
             })
         

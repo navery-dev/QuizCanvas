@@ -22,6 +22,13 @@ const QuizLanding = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editError, setEditError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [qText, setQText] = useState('');
+  const [qOptions, setQOptions] = useState('');
+  const [qAnswer, setQAnswer] = useState('');
+  const [qSaving, setQSaving] = useState(false);
+  const [qError, setQError] = useState('');
 
   useEffect(() => {
     if (authLoading) return;
@@ -39,9 +46,20 @@ const QuizLanding = () => {
         ]);
 
         if (detailsRes.data.success) {
-          setQuiz(detailsRes.data.data.quiz);
-          setEditTitle(detailsRes.data.data.quiz.title);
-          setEditDescription(detailsRes.data.data.quiz.description || '');
+          const qData = detailsRes.data.data.quiz;
+          setQuiz(qData);
+          setEditTitle(qData.title);
+          setEditDescription(qData.description || '');
+
+          const collected = [];
+          if (qData.sections) {
+            qData.sections.forEach(sec => {
+              sec.questions.forEach(q => {
+                collected.push({ ...q, section_name: sec.name });
+              });
+            });
+          }
+          setQuestions(collected);
           if (detailsRes.data.data.user_progress) {
             setMasteryLevel(detailsRes.data.data.user_progress.mastery_level || 'Not Started');
           }
@@ -91,6 +109,39 @@ const QuizLanding = () => {
     setEditDescription(quiz.description || '');
     setEditError('');
     setEditMode(false);
+  };
+
+  const startEditQuestion = (q) => {
+    setEditingQuestion(q);
+    setQText(q.text);
+    setQOptions(q.options.join(', '));
+    setQAnswer(q.answer_index);
+    setQError('');
+  };
+
+  const saveQuestionEdits = async () => {
+    try {
+      setQSaving(true);
+      setQError('');
+      const payload = {
+        questionText: qText,
+        answerOptions: qOptions.split(',').map((s) => s.trim()).filter((s) => s),
+        answerIndex: parseInt(qAnswer, 10)
+      };
+      const res = await axios.patch(`/api/quizzes/${id}/questions/${editingQuestion.question_id}/update/`, payload);
+      if (res.data.success) {
+        setQuestions((prev) => prev.map((qu) =>
+          qu.question_id === editingQuestion.question_id ? { ...qu, text: res.data.data.questionText, options: res.data.data.answerOptions, answer_index: res.data.data.answerIndex } : qu
+        ));
+        setEditingQuestion(null);
+      } else {
+        setQError(res.data.error || 'Failed to update question');
+      }
+    } catch (err) {
+      setQError(err.response?.data?.error || 'Failed to update question');
+    } finally {
+      setQSaving(false);
+    }
   };
 
   if (authLoading || loading) {
@@ -192,6 +243,36 @@ const QuizLanding = () => {
           <PlayCircle size={16} />
           Start Quiz
         </button>
+      </div>
+      <div className="card" style={{ marginTop: '2rem' }}>
+        <h3 style={{ marginTop: 0 }}>Questions</h3>
+        {questions.map((q) => (
+          <div key={q.question_id} style={{ marginBottom: '1rem' }}>
+            {editingQuestion && editingQuestion.question_id === q.question_id ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <input type="text" value={qText} onChange={(e) => setQText(e.target.value)} />
+                <input type="text" value={qOptions} onChange={(e) => setQOptions(e.target.value)} placeholder="Options comma separated" />
+                <input type="number" value={qAnswer} onChange={(e) => setQAnswer(e.target.value)} />
+                {qError && <p className="error-message">{qError}</p>}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={saveQuestionEdits} disabled={qSaving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Check size={16} /> Save
+                  </button>
+                  <button onClick={() => setEditingQuestion(null)} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <X size={16} /> Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                <span>{q.text}</span>
+                <button onClick={() => startEditQuestion(q)} className="btn" style={{ padding: '0.25rem' }} title="Edit question">
+                  <Edit2 size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
