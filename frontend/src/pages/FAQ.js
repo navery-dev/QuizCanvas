@@ -50,7 +50,7 @@ const FAQ = () => {
         },
         {
           question: "Can I organize questions into sections?",
-          answer: "Yes! Include a 'section' column in your CSV or JSON file. QuizCanvas will automatically organize your questions into sections for better learning organization."
+          answer: "You can include a 'section' column in your CSV or JSON file. Section organization in your dashboard is on the roadmap for future development"
         }
       ]
     },
@@ -63,11 +63,11 @@ const FAQ = () => {
         },
         {
           question: "Are quizzes timed?",
-          answer: "Timing depends on your quiz settings. Some quizzes may have time limits while others allow unlimited time. If there's a timer, it will be clearly displayed."
+          answer: "You can set a timer before starting the quiz if you want. A count down will be displayed and unanswered questions will be counted as incorrect when the timer is complete"
         },
         {
           question: "Can I pause and resume a quiz?",
-          answer: "Yes, if you accidentally close your browser or navigate away, you can resume your quiz attempt from where you left off (within the time limit if applicable)."
+          answer: "Direct pausing isn't currently available, however, if you accidentally close your browser or navigate away, you can resume your quiz attempt from where you left off (within the time limit if applicable)."
         },
         {
           question: "Can I retake quizzes?",
@@ -101,11 +101,11 @@ const FAQ = () => {
         },
         {
           question: "Can I change my account information?",
-          answer: "Yes! Go to your Profile page to update your username, email, first name, and last name."
+          answer: "Yes! Go to your Profile page to update your username and email."
         },
         {
           question: "What if I forget my password?",
-          answer: "Use the 'Forgot your password?' link on the login page. We'll send you an email with instructions to reset your password."
+          answer: "Password resets are not currently available and will be implemented in future development"
         },
         {
           question: "Can I delete my account?",
