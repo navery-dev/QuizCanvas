@@ -294,7 +294,3 @@ curl -f http://localhost/ || echo "Application not responding"
    # Check permissions
    ls -la /var/www/quizcanvas/backend/static/
    ```
-
-## Support
-
-For issues related to the course project, contact the instructor. For technical issues, check the GitHub repository issues section.
