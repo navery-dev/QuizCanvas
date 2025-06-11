@@ -22,13 +22,20 @@ const QuizLanding = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editError, setEditError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [sections, setSections] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [editingSection, setEditingSection] = useState(null);
+  const [sName, setSName] = useState('');
+  const [sDesc, setSDesc] = useState('');
+  const [sSaving, setSSaving] = useState(false);
+  const [sError, setSError] = useState('');  
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [qText, setQText] = useState('');
   const [qOptions, setQOptions] = useState('');
   const [qAnswer, setQAnswer] = useState('');
   const [qSaving, setQSaving] = useState(false);
   const [qError, setQError] = useState('');
+
 
   useEffect(() => {
     if (authLoading) return;
@@ -50,14 +57,18 @@ const QuizLanding = () => {
           setQuiz(qData);
           setEditTitle(qData.title);
           setEditDescription(qData.description || '');
+          setSections(qData.sections || []);
 
           const collected = [];
           if (qData.sections) {
+            setSections(qData.sections);
             qData.sections.forEach(sec => {
               sec.questions.forEach(q => {
-                collected.push({ ...q, section_name: sec.name });
+                collected.push({ ...q, section_name: sec.name, section_id: sec.section_id });
               });
             });
+          } else {
+            setSections([]);
           }
           setQuestions(collected);
           if (detailsRes.data.data.user_progress) {
@@ -111,6 +122,46 @@ const QuizLanding = () => {
     setEditMode(false);
   };
 
+  const startEditSection = (section) => {
+    setEditingSection(section);
+    setSName(section.name);
+    setSDesc(section.description || '');
+    setSError('');
+  };
+
+  const saveSectionEdits = async () => {
+    try {
+      if (!editingSection) return;
+      setSSaving(true);
+      setSError('');
+      const payload = {
+        name: sName,
+        description: sDesc
+      };
+      const res = await axios.patch(`/api/quizzes/${id}/sections/${editingSection.section_id}/update/`, payload);
+      if (res.data.success) {
+        setSections((prev) => prev.map((sec) =>
+          sec.section_id === editingSection.section_id ? { ...sec, name: res.data.data.name, description: res.data.data.description } : sec
+        ));
+        setQuestions((prev) => prev.map((q) =>
+          q.section_id === editingSection.section_id ? { ...q, section_name: res.data.data.name } : q
+        ));
+        setEditingSection(null);
+      } else {
+        setSError(res.data.error || 'Failed to update section');
+      }
+    } catch (err) {
+      setSError(err.response?.data?.error || 'Failed to update section');
+    } finally {
+      setSSaving(false);
+    }
+  };
+
+  const cancelSectionEdits = () => {
+    setEditingSection(null);
+    setSError('');
+  };
+
   const startEditQuestion = (q) => {
     setEditingQuestion(q);
     setQText(q.text);
@@ -132,6 +183,14 @@ const QuizLanding = () => {
       if (res.data.success) {
         setQuestions((prev) => prev.map((qu) =>
           qu.question_id === editingQuestion.question_id ? { ...qu, text: res.data.data.questionText, options: res.data.data.answerOptions, answer_index: res.data.data.answerIndex } : qu
+        ));
+        setSections((prev) => prev.map((sec) =>
+          sec.section_id === editingQuestion.section_id ? {
+            ...sec,
+            questions: sec.questions.map((qu) =>
+              qu.question_id === editingQuestion.question_id ? { ...qu, text: res.data.data.questionText, options: res.data.data.answerOptions, answer_index: res.data.data.answerIndex } : qu
+            )
+          } : sec
         ));
         setEditingQuestion(null);
       } else {
@@ -245,57 +304,96 @@ const QuizLanding = () => {
         </button>
       </div>
       <div className="card" style={{ marginTop: '2rem' }}>
-        <h3 style={{ marginTop: 0 }}>Questions</h3>
-        {questions.map((q) => (
-          <div key={q.question_id} style={{ marginBottom: '1rem' }}>
-            {editingQuestion && editingQuestion.question_id === q.question_id ? (
+        <h3 style={{ marginTop: 0 }}>Sections</h3>
+        {sections.map((section) => (
+          <div key={section.section_id} style={{ marginBottom: '2rem' }}>
+            {editingSection && editingSection.section_id === section.section_id ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div className="form-group">
-                  <label htmlFor="qText">Question</label>
-                  <input
-                    id="qText"
-                    type="text"
-                    value={qText}
-                    onChange={(e) => setQText(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="qOptions">Options</label>
-                  <input
-                    id="qOptions"
-                    type="text"
-                    value={qOptions}
-                    onChange={(e) => setQOptions(e.target.value)}
-                    placeholder="Options comma separated"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="qAnswer">Answer Index</label>
-                  <input
-                    id="qAnswer"
-                    type="number"
-                    value={qAnswer}
-                    onChange={(e) => setQAnswer(e.target.value)}
-                  />
-                </div>
-                {qError && <p className="error-message">{qError}</p>}
+                <input
+                  type="text"
+                  value={sName}
+                  onChange={(e) => setSName(e.target.value)}
+                  placeholder="Section name"
+                />
+                <textarea
+                  value={sDesc}
+                  onChange={(e) => setSDesc(e.target.value)}
+                  placeholder="Section description"
+                />
+                {sError && <p className="error-message">{sError}</p>}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={saveQuestionEdits} disabled={qSaving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Check size={16} /> Save
+                  <button onClick={saveSectionEdits} disabled={sSaving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>                    <Check size={16} /> Save
                   </button>
-                  <button onClick={() => setEditingQuestion(null)} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <button onClick={cancelSectionEdits} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <X size={16} /> Cancel
                   </button>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                <span>{q.text}</span>
-                <button onClick={() => startEditQuestion(q)} className="btn" style={{ padding: '0.25rem' }} title="Edit question">
+                <div>
+                  <h4 style={{ margin: '0 0 0.25rem 0' }}>{section.name}</h4>
+                  <p style={{ color: '#7f8c8d', margin: 0 }}>{section.description}</p>
+                </div>
+                <button onClick={() => startEditSection(section)} className="btn" style={{ padding: '0.25rem' }} title="Edit section">
                   <Edit2 size={16} />
                 </button>
               </div>
             )}
+            <div style={{ marginTop: '1rem', paddingLeft: '1rem' }}>
+              {section.questions.map((q) => (
+                <div key={q.question_id} style={{ marginBottom: '1rem' }}>
+                  {editingQuestion && editingQuestion.question_id === q.question_id ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div className="form-group">
+                        <label htmlFor="qText">Question</label>
+                        <input
+                          id="qText"
+                          type="text"
+                          value={qText}
+                          onChange={(e) => setQText(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="qOptions">Options</label>
+                        <input
+                          id="qOptions"
+                          type="text"
+                          value={qOptions}
+                          onChange={(e) => setQOptions(e.target.value)}
+                          placeholder="Options comma separated"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="qAnswer">Answer Index</label>
+                        <input
+                          id="qAnswer"
+                          type="number"
+                          value={qAnswer}
+                          onChange={(e) => setQAnswer(e.target.value)}
+                        />
+                      </div>
+                      {qError && <p className="error-message">{qError}</p>}
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={saveQuestionEdits} disabled={qSaving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Check size={16} /> Save
+                        </button>
+                        <button onClick={() => setEditingQuestion(null)} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <X size={16} /> Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>{q.text}</span>
+                      <button onClick={() => startEditQuestion({ ...q, section_id: section.section_id })} className="btn" style={{ padding: '0.25rem' }} title="Edit question">
+                        <Edit2 size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

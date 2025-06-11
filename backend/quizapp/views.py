@@ -1196,6 +1196,53 @@ def update_question(request, quiz_id, question_id):
         return APIResponse.error('Internal server error', error_code='SERVER_ERROR', status=500)
 
 @csrf_exempt
+@require_http_methods(["PATCH"])
+@jwt_required
+def update_section(request, quiz_id, section_id):
+    """Update a section's name and/or description"""
+    try:
+        user = request.user
+        data = json.loads(request.body)
+
+        quiz_tests = QuizAttemptTests()
+        access_test = quiz_tests.test_quiz_access_permission(user.userID, quiz_id)
+        if not access_test['success']:
+            status_code = 404 if access_test.get('error_code') == 'QUIZ_NOT_FOUND' else 403
+            return JsonResponse(access_test, status=status_code)
+
+        quiz = access_test['quiz']
+
+        try:
+            section = Section.objects.get(sectionID=section_id, quizID=quiz)
+        except Section.DoesNotExist:
+            return APIResponse.error('Section not found', error_code='SECTION_NOT_FOUND', status=404)
+
+        name = data.get('sectionName')
+        desc = data.get('sectionDesc')
+
+        if name is not None:
+            section.sectionName = str(name).strip()
+        if desc is not None:
+            section.sectionDesc = str(desc).strip()
+
+        section.save()
+
+        return APIResponse.success(
+            data={
+                'section_id': section.sectionID,
+                'sectionName': section.sectionName,
+                'sectionDesc': section.sectionDesc or ''
+            },
+            message='Section updated successfully'
+        )
+
+    except json.JSONDecodeError:
+        return APIResponse.error('Invalid JSON data', error_code='INVALID_JSON')
+    except Exception as e:
+        logger.error(f"Error updating section: {e}")
+        return APIResponse.error('Internal server error', error_code='SERVER_ERROR', status=500)
+
+@csrf_exempt
 @require_http_methods(["DELETE"])
 @jwt_required  
 def delete_quiz(request, quiz_id):

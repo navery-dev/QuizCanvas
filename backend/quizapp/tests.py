@@ -3037,3 +3037,61 @@ class UpdateQuizDescriptionViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.quiz.refresh_from_db()
         self.assertEqual(self.quiz.description, 'Updated')
+
+class UpdateSectionViewTests(TestCase):
+    """Tests for updating a section within a quiz"""
+
+    def setUp(self):
+        settings.JWT_SECRET_KEY = 'testsecret'
+        self.client = Client()
+        self.owner = Users.objects.create(userName='owner', email='owner@example.com', password='pass')
+        self.other = Users.objects.create(userName='other', email='other@example.com', password='pass')
+        file = File.objects.create(userID=self.owner, fileName='test.csv', filePath='x.csv', fileType='csv')
+        self.quiz = Quiz.objects.create(fileID=file, title='Quiz')
+        self.section = Section.objects.create(quizID=self.quiz, sectionName='Sec', sectionDesc='Desc')
+        self.token_owner = generate_jwt_token(self.owner)
+        self.token_other = generate_jwt_token(self.other)
+
+    def _url(self):
+        return f'/api/quizzes/{self.quiz.quizID}/sections/{self.section.sectionID}/update/'
+
+    def test_unauthorized_user_cannot_update_section(self):
+        response = self.client.patch(
+            self._url(),
+            data=json.dumps({'name': 'New', 'description': 'D'}),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.token_other}'
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_update_section(self):
+        response = self.client.patch(
+            self._url(),
+            data=json.dumps({'name': 'NewName', 'description': 'NewDesc'}),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.token_owner}'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.section.refresh_from_db()
+        self.assertEqual(self.section.sectionName, 'NewName')
+        self.assertEqual(self.section.sectionDesc, 'NewDesc')
+
+    def test_invalid_input(self):
+        # Missing name
+        response = self.client.patch(
+            self._url(),
+            data=json.dumps({'description': 'NewDesc'}),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.token_owner}'
+        )
+        self.assertEqual(response.status_code, 400)
+
+        # Name too long
+        long_name = 'a' * 51
+        response = self.client.patch(
+            self._url(),
+            data=json.dumps({'name': long_name, 'description': 'D'}),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {self.token_owner}'
+        )
+        self.assertEqual(response.status_code, 400)
