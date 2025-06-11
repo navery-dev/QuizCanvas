@@ -50,7 +50,7 @@ const FAQ = () => {
         },
         {
           question: "Can I organize questions into sections?",
-          answer: "You can include a 'section' column in your CSV or JSON file. Section organization in your dashboard is on the roadmap for future development"
+          answer: "Yes! You can include a 'section' column in your CSV or JSON file. Questions will be organized into these sections in the quiz landing page."
         }
       ]
     },
