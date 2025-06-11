@@ -23,7 +23,6 @@ const QuizLanding = () => {
   const [editError, setEditError] = useState('');
   const [saving, setSaving] = useState(false);
   const [sections, setSections] = useState([]);
-  const [questions, setQuestions] = useState([]);
   const [editingSection, setEditingSection] = useState(null);
   const [sName, setSName] = useState('');
   const [sDesc, setSDesc] = useState('');
@@ -59,18 +58,6 @@ const QuizLanding = () => {
           setEditDescription(qData.description || '');
           setSections(qData.sections || []);
 
-          const collected = [];
-          if (qData.sections) {
-            setSections(qData.sections);
-            qData.sections.forEach(sec => {
-              sec.questions.forEach(q => {
-                collected.push({ ...q, section_name: sec.name, section_id: sec.section_id });
-              });
-            });
-          } else {
-            setSections([]);
-          }
-          setQuestions(collected);
           if (detailsRes.data.data.user_progress) {
             setMasteryLevel(detailsRes.data.data.user_progress.mastery_level || 'Not Started');
           }
@@ -143,9 +130,6 @@ const QuizLanding = () => {
         setSections((prev) => prev.map((sec) =>
           sec.section_id === editingSection.section_id ? { ...sec, name: res.data.data.name, description: res.data.data.description } : sec
         ));
-        setQuestions((prev) => prev.map((q) =>
-          q.section_id === editingSection.section_id ? { ...q, section_name: res.data.data.name } : q
-        ));
         setEditingSection(null);
       } else {
         setSError(res.data.error || 'Failed to update section');
@@ -180,17 +164,14 @@ const QuizLanding = () => {
         answerIndex: parseInt(qAnswer, 10)
       };
       const res = await axios.patch(`/api/quizzes/${id}/questions/${editingQuestion.question_id}/update/`, payload);
-      if (res.data.success) {
-        setQuestions((prev) => prev.map((qu) =>
-          qu.question_id === editingQuestion.question_id ? { ...qu, text: res.data.data.questionText, options: res.data.data.answerOptions, answer_index: res.data.data.answerIndex } : qu
-        ));
-        setSections((prev) => prev.map((sec) =>
-          sec.section_id === editingQuestion.section_id ? {
-            ...sec,
-            questions: sec.questions.map((qu) =>
-              qu.question_id === editingQuestion.question_id ? { ...qu, text: res.data.data.questionText, options: res.data.data.answerOptions, answer_index: res.data.data.answerIndex } : qu
-            )
-          } : sec
+        if (res.data.success) {
+          setSections((prev) => prev.map((sec) =>
+            sec.section_id === editingQuestion.section_id ? {
+              ...sec,
+              questions: sec.questions.map((qu) =>
+                qu.question_id === editingQuestion.question_id ? { ...qu, text: res.data.data.questionText, options: res.data.data.answerOptions, answer_index: res.data.data.answerIndex } : qu
+              )
+            } : sec
         ));
         setEditingQuestion(null);
       } else {
