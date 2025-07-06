@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { BookOpen, Clock, BarChart3, PlayCircle, TrendingUp, Edit2, X, Check } from 'lucide-react';
+import { BookOpen, Clock, BarChart3, PlayCircle, TrendingUp, Edit2, Edit3, X, Check } from 'lucide-react';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
@@ -34,6 +34,9 @@ const QuizLanding = () => {
   const [qAnswer, setQAnswer] = useState('');
   const [qSaving, setQSaving] = useState(false);
   const [qError, setQError] = useState('');
+  const [questionEditVisibility, setQuestionEditVisibility] = useState({});
+
+  const hasSections = sections.length > 0;
 
 
   useEffect(() => {
@@ -184,6 +187,14 @@ const QuizLanding = () => {
     }
   };
 
+  const toggleQuestionEditVisibility = (sectionId) => {
+    setQuestionEditVisibility(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+    setEditingQuestion(null);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="page">
@@ -311,19 +322,39 @@ const QuizLanding = () => {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+              <div
+                className="edit-container"
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}
+              >
                 <div>
                   <h4 style={{ margin: '0 0 0.25rem 0' }}>{section.name}</h4>
                   <p style={{ color: '#7f8c8d', margin: 0 }}>{section.description}</p>
                 </div>
-                <button onClick={() => startEditSection(section)} className="btn" style={{ padding: '0.25rem' }} title="Edit section">
-                  <Edit2 size={16} />
-                </button>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    onClick={() => startEditSection(section)}
+                    className="btn edit-control"
+                    style={{ padding: '0.25rem' }}
+                    title="Edit section"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  {hasSections && (
+                    <button
+                      onClick={() => toggleQuestionEditVisibility(section.section_id)}
+                      className="btn edit-control"
+                      style={{ padding: '0.25rem' }}
+                      title="Edit questions"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             <div style={{ marginTop: '1rem', paddingLeft: '1rem' }}>
               {section.questions.map((q) => (
-                <div key={q.question_id} style={{ marginBottom: '1rem' }}>
+                <div key={q.question_id} style={{ marginBottom: '1rem' }} className="edit-container">
                   {editingQuestion && editingQuestion.question_id === q.question_id ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <div className="form-group">
@@ -367,9 +398,16 @@ const QuizLanding = () => {
                   ) : (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
                       <span>{q.text}</span>
-                      <button onClick={() => startEditQuestion({ ...q, section_id: section.section_id })} className="btn" style={{ padding: '0.25rem' }} title="Edit question">
-                        <Edit2 size={16} />
-                      </button>
+                      {(!hasSections || questionEditVisibility[section.section_id]) && (
+                        <button
+                          onClick={() => startEditQuestion({ ...q, section_id: section.section_id })}
+                          className="btn edit-control"
+                          style={{ padding: '0.25rem' }}
+                          title="Edit question"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
