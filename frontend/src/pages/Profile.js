@@ -321,12 +321,12 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Change Password */}
-        <div className="card">
-          <h2>Change Password</h2>
-          {!showPasswordForm ? (
+        {/* Password Change (embedded in personal info card) */}
+        {editing && (
+          !showPasswordForm ? (
             <button
               className="btn btn-secondary"
+              style={{ marginTop: '1rem' }}
               onClick={() => setShowPasswordForm(true)}
             >
               Update Password
@@ -390,8 +390,8 @@ const Profile = () => {
                 </button>
               </div>
             </form>
-          )}
-        </div>
+          )
+        )}
 
       {/* Account Statistics */}
         <div className="card">
