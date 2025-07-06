@@ -528,6 +528,65 @@ def reset_password_confirm(request):
             status=500
         )
 
+# Profile Management - Password Change
+@csrf_exempt
+@require_http_methods(["POST"])
+@jwt_required
+def change_password(request):
+    """Allow authenticated users to change their password"""
+    try:
+        data = json.loads(request.body)
+        current_password = data.get('current_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+
+        if not current_password or not new_password:
+            return APIResponse.error(
+                'Current and new password are required',
+                error_code='MISSING_FIELDS'
+            )
+
+        user = request.user
+
+        if not check_password(current_password, user.password):
+            return APIResponse.error(
+                'Current password is incorrect',
+                error_code='INVALID_CREDENTIALS',
+                status=400
+            )
+
+        user_tests = UserRegistrationTests()
+        password_test = user_tests.test_password_strength(new_password)
+        if not password_test['success']:
+            return JsonResponse(password_test, status=400)
+
+        try:
+            user.password = make_password(new_password)
+            user.save()
+            logger.info(f"Password changed for user {user.userName}")
+            return APIResponse.success(
+                message='Password changed successfully'
+            )
+        except Exception as e:
+            logger.error(f"Error changing password: {e}")
+            return APIResponse.error(
+                'Failed to update password',
+                error_code='UPDATE_FAILED',
+                status=500
+            )
+
+    except json.JSONDecodeError:
+        return APIResponse.error(
+            'Invalid JSON data',
+            error_code='INVALID_JSON'
+        )
+    except Exception as e:
+        logger.error(f"Error changing password: {e}")
+        return APIResponse.error(
+            'Internal server error',
+            error_code='SERVER_ERROR',
+            status=500
+        )
+
 # Profile Management
 @csrf_exempt
 @require_http_methods(["GET", "PATCH"])

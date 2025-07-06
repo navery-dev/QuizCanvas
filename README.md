@@ -12,7 +12,7 @@ Status: Production Ready
 ## Feature Roadmap
 - Tune Mastery Level calculations
 - Update User Profile statistics
-- Add password reset functionality
+- Add password reset functionality (profile page)
 - Add individual question and section statistics
 
 ## Development Setup

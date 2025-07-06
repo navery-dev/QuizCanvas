@@ -20,6 +20,12 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profileData, setProfileData] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   // Fetch complete user profile data
   React.useEffect(() => {
@@ -100,6 +106,38 @@ const Profile = () => {
     setEditing(false);
     setError('');
     setSuccess('');
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError('New passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post('/api/auth/change-password/', {
+        current_password: passwordForm.currentPassword,
+        new_password: passwordForm.newPassword
+      });
+      if (response.data.success) {
+        setSuccess('Password changed successfully!');
+        setShowPasswordForm(false);
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    } catch (err) {
+      console.error('Failed to change password:', err);
+      setError(
+        err.response?.data?.error || 'Failed to change password'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Show loading while auth is being initialized
@@ -283,7 +321,79 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Account Statistics */}
+        {/* Change Password */}
+        <div className="card">
+          <h2>Change Password</h2>
+          {!showPasswordForm ? (
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowPasswordForm(true)}
+            >
+              Update Password
+            </button>
+          ) : (
+            <form onSubmit={handlePasswordChange} style={{ marginTop: '1rem' }}>
+              <div className="form-group">
+                <label htmlFor="currentPassword">Current Password</label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  name="currentPassword"
+                  value={passwordForm.currentPassword}
+                  onChange={e =>
+                    setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="newPassword">New Password</label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  name="newPassword"
+                  value={passwordForm.newPassword}
+                  onChange={e =>
+                    setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={passwordForm.confirmPassword}
+                  onChange={e =>
+                    setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? 'Updating...' : 'Change Password'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowPasswordForm(false);
+                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    setError('');
+                    setSuccess('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+
+      {/* Account Statistics */}
         <div className="card">
           <h2>Account Statistics</h2>
           
