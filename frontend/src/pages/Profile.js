@@ -278,9 +278,18 @@ const Profile = () => {
                 </small>
               </div>
 
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ margin: '1rem 0' }}
+                onClick={() => setShowPasswordForm(true)}
+              >
+                Change Password
+              </button>
+
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary"
                   disabled={loading}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -288,8 +297,8 @@ const Profile = () => {
                   <Save size={16} />
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleCancel}
                   className="btn btn-secondary"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -321,20 +330,12 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Password Change (embedded in personal info card) */}
-        {editing && (
-          !showPasswordForm ? (
-            <button
-              className="btn btn-secondary"
-              style={{ marginTop: '1rem' }}
-              onClick={() => setShowPasswordForm(true)}
-            >
-              Update Password
-            </button>
-          ) : (
-            <form onSubmit={handlePasswordChange} style={{ marginTop: '1rem' }}>
+        {showPasswordForm && (
+          <div className="card">
+            <h2>Change Password</h2>
+            <form onSubmit={handlePasswordChange}>
               <div className="form-group">
-                <label htmlFor="currentPassword">Current Password</label>
+                <label htmlFor="currentPassword">Current password</label>
                 <input
                   type="password"
                   id="currentPassword"
@@ -347,7 +348,7 @@ const Profile = () => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="newPassword">New Password</label>
+                <label htmlFor="newPassword">New password</label>
                 <input
                   type="password"
                   id="newPassword"
@@ -360,7 +361,7 @@ const Profile = () => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <label htmlFor="confirmPassword">Confirm new password</label>
                 <input
                   type="password"
                   id="confirmPassword"
@@ -374,7 +375,7 @@ const Profile = () => {
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Updating...' : 'Change Password'}
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button
                   type="button"
@@ -390,7 +391,7 @@ const Profile = () => {
                 </button>
               </div>
             </form>
-          )
+          </div>
         )}
 
       {/* Account Statistics */}
