@@ -1501,7 +1501,7 @@ def get_section_questions(request, quiz_id, section_id):
 @csrf_exempt
 @require_http_methods(["POST"])
 @jwt_required
-def start_quiz_attempt(request, quiz_id):
+def start_quiz_attempt(request, quiz_id, section_id=None):
     """
     Test Case ID: 32 - Concurrent User Attempts
     Start a new quiz attempt for the authenticated user
@@ -1517,39 +1517,54 @@ def start_quiz_attempt(request, quiz_id):
         if not access_test['success']:
             status_code = 404 if access_test.get('error_code') == 'QUIZ_NOT_FOUND' else 403
             return JsonResponse(access_test, status=status_code)
-        
+
         # Test for concurrent attempts
         concurrent_test = quiz_tests.test_concurrent_attempts(user.userID, quiz_id)
         if not concurrent_test['success']:
             return JsonResponse(concurrent_test, status=409)
-        
+
         # If all tests pass, create new quiz attempt
         quiz = access_test['quiz']
-        
+        section = None
+        if section_id:
+            try:
+                section = Section.objects.get(sectionID=section_id, quizID=quiz)
+            except Section.DoesNotExist:
+                return APIResponse.error(
+                    'Section not found',
+                    error_code='SECTION_NOT_FOUND',
+                    status=404
+                )
+
         with transaction.atomic():
             quiz_attempt = QuizAttempt.objects.create(
                 userID=user,
                 quizID=quiz,
+                sectionID=section,
                 startTime=timezone.now(),
                 completed=False
             )
-            
+
             # Get first question
-            first_question = Question.objects.filter(quizID=quiz).first()
+            q_filter = Question.objects.filter(quizID=quiz)
+            if section:
+                q_filter = q_filter.filter(sectionID=section)
+            first_question = q_filter.first()
             if not first_question:
                 return APIResponse.error(
                     'No questions found in this quiz',
                     error_code='NO_QUESTIONS'
                 )
-            
-            total_questions = Question.objects.filter(quizID=quiz).count()
+
+            total_questions = q_filter.count()
             
             logger.info(f"User {user.userName} started quiz {quiz.title}")
-            
+
             return APIResponse.success(
                 data={
                     'attempt_id': quiz_attempt.attemptID,
                     'quiz_title': quiz.title,
+                    'section_id': section.sectionID if section else None,
                     'total_questions': total_questions,
                     'first_question': {
                         'question_id': first_question.questionID,
@@ -1605,10 +1620,13 @@ def get_quiz_question(request, attempt_id, question_number):
         if not bounds_test['success']:
             return JsonResponse(bounds_test, status=400)
         
-        # Get all questions for this quiz in order
+        # Get all questions for this quiz/section in order
         questions = Question.objects.filter(
             quizID=quiz_attempt.quizID
-        ).select_related('sectionID').order_by('questionID')
+        )
+        if quiz_attempt.sectionID_id:
+            questions = questions.filter(sectionID=quiz_attempt.sectionID)
+        questions = questions.select_related('sectionID').order_by('questionID')
         
         total_questions = questions.count()
         
@@ -1831,11 +1849,15 @@ def complete_quiz_attempt(request, attempt_id):
         score_test = quiz_tests.test_score_calculation(attempt_id)
         if not score_test['success']:
             return JsonResponse(score_test, status=400)
-        
-        # Get score calculation results
-        score = score_test['score']
-        correct_answers = score_test['correct_answers']
-        total_questions = score_test['total_questions']
+
+        # Calculate score using attempt section if provided
+        total_questions_qs = Question.objects.filter(quizID=quiz_attempt.quizID)
+        if quiz_attempt.sectionID_id:
+            total_questions_qs = total_questions_qs.filter(sectionID=quiz_attempt.sectionID)
+        total_questions = total_questions_qs.count()
+        answers = Answer.objects.filter(attemptID=quiz_attempt)
+        correct_answers = answers.filter(isCorrect=True).count()
+        score = (correct_answers / total_questions) * 100 if total_questions else 0
         incorrect_answers = total_questions - correct_answers
         
         # Calculate mastery level
@@ -1858,17 +1880,20 @@ def complete_quiz_attempt(request, attempt_id):
             progress, created = Progress.objects.update_or_create(
                 userID=user,
                 quizID=quiz_attempt.quizID,
+                sectionID=quiz_attempt.sectionID,
                 defaults={
                     'attemptsCount': QuizAttempt.objects.filter(
-                        userID=user, 
+                        userID=user,
                         quizID=quiz_attempt.quizID,
+                        sectionID=quiz_attempt.sectionID,
                         completed=True
                     ).count(),
                     'bestScore': max(
                         score,
                         Progress.objects.filter(
-                            userID=user, 
-                            quizID=quiz_attempt.quizID
+                            userID=user,
+                            quizID=quiz_attempt.quizID,
+                            sectionID=quiz_attempt.sectionID
                         ).aggregate(Max('bestScore'))['bestScore__max'] or 0
                     ),
                     'lastAttemptDate': timezone.now(),
@@ -1887,6 +1912,7 @@ def complete_quiz_attempt(request, attempt_id):
                 'time_taken': str(quiz_attempt.endTime - quiz_attempt.startTime),
                 'mastery_level': mastery_level,
                 'quiz_title': quiz_attempt.quizID.title,
+                'section_id': quiz_attempt.sectionID_id,
                 'attempts_count': progress.attemptsCount,
                 'best_score': progress.bestScore
             },
@@ -1931,7 +1957,10 @@ def resume_quiz_attempt(request, attempt_id):
             )
         
         # Get progress information from test results
-        total_questions = Question.objects.filter(quizID=quiz_attempt.quizID).count()
+        q_filter = Question.objects.filter(quizID=quiz_attempt.quizID)
+        if quiz_attempt.sectionID_id:
+            q_filter = q_filter.filter(sectionID=quiz_attempt.sectionID)
+        total_questions = q_filter.count()
         
         if test_result.get('next_question_id'):
             # Find next question to continue with
@@ -1940,7 +1969,10 @@ def resume_quiz_attempt(request, attempt_id):
             # Calculate next question number
             all_questions = Question.objects.filter(
                 quizID=quiz_attempt.quizID
-            ).order_by('questionID')
+            )
+            if quiz_attempt.sectionID_id:
+                all_questions = all_questions.filter(sectionID=quiz_attempt.sectionID)
+            all_questions = all_questions.order_by('questionID')
             
             question_number = 1
             for i, q in enumerate(all_questions, 1):
@@ -1952,6 +1984,7 @@ def resume_quiz_attempt(request, attempt_id):
                 data={
                     'attempt_id': quiz_attempt.attemptID,
                     'quiz_title': quiz_attempt.quizID.title,
+                    'section_id': quiz_attempt.sectionID_id,
                     'total_questions': total_questions,
                     'progress_percentage': test_result.get('progress_percentage', 0),
                     'next_question': {
@@ -1970,6 +2003,7 @@ def resume_quiz_attempt(request, attempt_id):
                 data={
                     'attempt_id': quiz_attempt.attemptID,
                     'quiz_title': quiz_attempt.quizID.title,
+                    'section_id': quiz_attempt.sectionID_id,
                     'all_answered': True,
                     'total_questions': total_questions,
                     'progress_percentage': 100,
@@ -2496,7 +2530,10 @@ def get_quiz_progress_bar(request, attempt_id):
             )
         
         # Get progress data
-        total_questions = Question.objects.filter(quizID=quiz_attempt.quizID).count()
+        q_filter = Question.objects.filter(quizID=quiz_attempt.quizID)
+        if quiz_attempt.sectionID_id:
+            q_filter = q_filter.filter(sectionID=quiz_attempt.sectionID)
+        total_questions = q_filter.count()
         answered_questions = Answer.objects.filter(attemptID=quiz_attempt).count()
         
         # RUN TESTS - Test Case ID: 21

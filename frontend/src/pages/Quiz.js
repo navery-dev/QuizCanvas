@@ -59,20 +59,25 @@ const Quiz = () => {
         setQuiz(quizData);
         
         // Extract questions from quiz sections
+        const params = new URLSearchParams(location.search);
+        const sectionId = params.get('section');
         const allQuestions = [];
         if (quizData.sections) {
           quizData.sections.forEach(section => {
-            section.questions.forEach(question => {
-              allQuestions.push({
-                ...question,
-                section_name: section.name
+            if (!sectionId || String(section.section_id) === sectionId) {
+              section.questions.forEach(question => {
+                allQuestions.push({
+                  ...question,
+                  section_name: section.name
+                });
               });
-            });
+            }
           });
         }
         setQuestions(allQuestions);
         
-        const attemptResponse = await axios.post(`/api/quizzes/${id}/start/`);
+        const startUrl = sectionId ? `/api/quizzes/${id}/sections/${sectionId}/start/` : `/api/quizzes/${id}/start/`;
+        const attemptResponse = await axios.post(startUrl);
         setAttemptId(attemptResponse.data.data.attempt_id);
         
         // Set timer if quiz has time limit
@@ -105,7 +110,9 @@ const Quiz = () => {
               }
             } else {
               await axios.post(`/api/attempts/${existingId}/end/`);
-              const startRes = await axios.post(`/api/quizzes/${id}/start/`);
+              const sectionId = new URLSearchParams(location.search).get('section');
+              const startUrl = sectionId ? `/api/quizzes/${id}/sections/${sectionId}/start/` : `/api/quizzes/${id}/start/`;
+              const startRes = await axios.post(startUrl);
               setAttemptId(startRes.data.data.attempt_id);
             }
             
