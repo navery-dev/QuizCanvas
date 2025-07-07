@@ -16,7 +16,7 @@ const QuizLanding = () => {
   const [masteryLevel, setMasteryLevel] = useState('Not Started');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [timerMinutes, setTimerMinutes] = useState('');
+  const [timerMinutes, setTimerMinutes] = useState('none');
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -79,8 +79,18 @@ const QuizLanding = () => {
     fetchData();
   }, [id, isAuthenticated, authLoading, navigate]);
 
-  const startQuiz = () => {
-    const url = timerMinutes ? `/quiz/${id}/take?timer=${timerMinutes}` : `/quiz/${id}/take`;
+  const startQuiz = (sectionId = null) => {
+    let url = `/quiz/${id}/take`;
+    const params = [];
+    if (timerMinutes && timerMinutes !== 'none') {
+      params.push(`timer=${timerMinutes}`);
+    }
+    if (sectionId) {
+      params.push(`section=${sectionId}`);
+    }
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
     navigate(url);
   };
 
@@ -280,15 +290,30 @@ const QuizLanding = () => {
 
       <div className="card" style={{ textAlign: 'center' }}>
         <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="timer" style={{ marginRight: '0.5rem' }}>Custom Timer (minutes):</label>
-          <input
+          <label htmlFor="timer" style={{ marginRight: '0.5rem' }}>Timer:</label>
+          <select
             id="timer"
-            type="number"
-            min="1"
             value={timerMinutes}
-            onChange={(e) => setTimerMinutes(e.target.value)}
-            style={{ width: '80px' }}
-          />
+            onChange={(e) => {
+              if (e.target.value === 'custom') {
+                const val = window.prompt('Enter timer in minutes');
+                if (val && !isNaN(val)) {
+                  setTimerMinutes(parseInt(val, 10));
+                } else {
+                  setTimerMinutes('none');
+                }
+              } else {
+                setTimerMinutes(e.target.value);
+              }
+            }}
+          >
+            <option value="none">None</option>
+            <option value="1">1</option>
+            <option value="15">15</option>
+            <option value="30">30</option>
+            <option value="60">60</option>
+            <option value="custom">Custom...</option>
+          </select>
         </div>
         <button onClick={startQuiz} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
           <PlayCircle size={16} />
@@ -331,6 +356,14 @@ const QuizLanding = () => {
                   <p style={{ color: '#7f8c8d', margin: 0 }}>{section.description}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    onClick={() => startQuiz(section.section_id)}
+                    className="btn btn-primary"
+                    style={{ padding: '0.25rem' }}
+                    title="Take section quiz"
+                  >
+                    <PlayCircle size={16} />
+                  </button>
                   <button
                     onClick={() => startEditSection(section)}
                     className="btn edit-control"
