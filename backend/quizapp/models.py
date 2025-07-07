@@ -93,6 +93,7 @@ class QuizAttempt(models.Model):
     attemptID = models.AutoField(primary_key=True)
     userID = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='userID', related_name='quizAttempts')
     quizID = models.ForeignKey(Quiz, on_delete=models.CASCADE, db_column='quizID', related_name='attempts')
+    sectionID = models.ForeignKey(Section, on_delete=models.SET_NULL, db_column='sectionID', related_name='sectionAttempts', null=True, blank=True)
     startTime = models.DateTimeField(auto_now_add=True)
     endTime = models.DateTimeField(null=True, blank=True)
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,  

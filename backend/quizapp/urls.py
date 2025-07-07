@@ -30,7 +30,8 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/randomized/', views.get_randomized_quiz_questions, name='randomized_questions'),  
     
     # Quiz Taking
-    path('quizzes/<int:quiz_id>/start/', views.start_quiz_attempt, name='start_quiz_attempt'),  
+    path('quizzes/<int:quiz_id>/start/', views.start_quiz_attempt, name='start_quiz_attempt'),
+    path('quizzes/<int:quiz_id>/sections/<int:section_id>/start/', views.start_quiz_attempt, name='start_section_quiz_attempt'),
     path('attempts/<int:attempt_id>/question/<int:question_number>/', views.get_quiz_question, name='get_quiz_question'),  
     path('attempts/<int:attempt_id>/answer/<int:question_id>/', views.submit_quiz_answer, name='submit_quiz_answer'), 
     path('attempts/<int:attempt_id>/complete/', views.complete_quiz_attempt, name='complete_quiz_attempt'),
