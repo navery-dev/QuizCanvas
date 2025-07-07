@@ -48,19 +48,19 @@ const Quiz = () => {
     }
     
     const fetchQuizData = async () => {
+      const searchParams = new URLSearchParams(location.search);
+      const sectionId = searchParams.get('section');
       let quizData;
       try {
         setLoading(true);
-        
+
         // Fetch quiz details
         const quizResponse = await axios.get(`/api/quizzes/${id}/`);
-        
+
         quizData = quizResponse.data.data.quiz;
         setQuiz(quizData);
-        
+
         // Extract questions from quiz sections
-        const searchParams = new URLSearchParams(location.search);
-        const sectionId = searchParams.get('section');
         const allQuestions = [];
         if (quizData.sections) {
           quizData.sections.forEach(section => {
@@ -79,7 +79,7 @@ const Quiz = () => {
         const startUrl = sectionId ? `/api/quizzes/${id}/sections/${sectionId}/start/` : `/api/quizzes/${id}/start/`;
         const attemptResponse = await axios.post(startUrl);
         setAttemptId(attemptResponse.data.data.attempt_id);
-        
+
         // Set timer if quiz has time limit
         const customTimer = parseInt(searchParams.get('timer'), 10);
         
@@ -109,15 +109,16 @@ const Quiz = () => {
               }
             } else {
               await axios.post(`/api/attempts/${existingId}/end/`);
-              const sectionId = new URLSearchParams(location.search).get('section');
-              const startUrl = sectionId ? `/api/quizzes/${id}/sections/${sectionId}/start/` : `/api/quizzes/${id}/start/`;
+              const restartSectionId = searchParams.get('section');
+              const startUrl = restartSectionId ?
+                `/api/quizzes/${id}/sections/${restartSectionId}/start/` :
+                `/api/quizzes/${id}/start/`;
               const startRes = await axios.post(startUrl);
               setAttemptId(startRes.data.data.attempt_id);
             }
-            
+
             // Set timer for resumed/restarted attempt
-            const params = new URLSearchParams(location.search);
-            const customTimer = parseInt(params.get('timer'), 10);
+            const customTimer = parseInt(searchParams.get('timer'), 10);
             
             if (!isNaN(customTimer) && customTimer > 0) {
               setTimeLeft(customTimer * 60);
