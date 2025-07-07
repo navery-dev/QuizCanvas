@@ -298,7 +298,7 @@ const QuizLanding = () => {
               if (e.target.value === 'custom') {
                 const val = window.prompt('Enter timer in minutes');
                 if (val && !isNaN(val)) {
-                  setTimerMinutes(parseInt(val, 10));
+                  setTimerMinutes(String(parseInt(val, 10)));
                 } else {
                   setTimerMinutes('none');
                 }
@@ -313,6 +313,11 @@ const QuizLanding = () => {
             <option value="30">30</option>
             <option value="60">60</option>
             <option value="custom">Custom...</option>
+            {!["none", "1", "15", "30", "60", "custom"].includes(String(timerMinutes)) && (
+              <option value={timerMinutes} hidden>
+                Custom ({timerMinutes} min)
+              </option>
+            )}
           </select>
         </div>
         <button onClick={startQuiz} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
