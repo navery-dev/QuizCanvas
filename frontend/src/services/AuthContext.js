@@ -169,10 +169,53 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const requestPasswordReset = async (email) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/api/auth/password-reset/', { email });
+      if (response.data.success) {
+        return { success: true, message: response.data.message };
+      }
+      return { success: false, error: response.data.error || 'Password reset request failed' };
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Password reset request failed'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/api/auth/password-reset/confirm/', {
+        token,
+        new_password: newPassword
+      });
+      if (response.data.success) {
+        return { success: true, message: response.data.message };
+      }
+      return { success: false, error: response.data.error || 'Password reset failed' };
+    } catch (error) {
+      console.error('Password reset failed:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Password reset failed'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     login,
     register,
+    requestPasswordReset,
+    resetPassword,
     logout,
     loading,
     isAuthenticated: !!user
