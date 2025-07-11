@@ -81,7 +81,6 @@ const Quiz = () => {
         setAttemptId(attemptResponse.data.data.attempt_id);
         
         // Set timer if quiz has time limit
-        const params = new URLSearchParams(location.search);
         const customTimer = parseInt(params.get('timer'), 10);
         
         if (!isNaN(customTimer) && customTimer > 0) {
