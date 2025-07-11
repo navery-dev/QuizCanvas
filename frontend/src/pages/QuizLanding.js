@@ -325,15 +325,18 @@ const QuizLanding = () => {
           Start Quiz
         </button>
       </div>
+      {hasSections && (
+        <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+          <Link
+            to={`/quiz/${id}/metrics`}
+            className="btn btn-secondary btn-small"
+          >
+            View Section Metrics
+          </Link>
+        </div>
+      )}
       <div className="card" style={{ marginTop: '2rem' }}>
         <h3 style={{ marginTop: 0 }}>Sections</h3>
-        {hasSections && (
-          <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-            <Link to={`/quiz/${id}/metrics`} className="btn btn-secondary btn-small">
-              View Section Metrics
-            </Link>
-          </div>
-        )}
         {sections.map((section) => {
           const sectionInfo = stats?.section_stats?.find((s) => s.section_id === section.section_id);
           return (
