@@ -6,6 +6,8 @@ import Home from './pages/Home';
 import FAQ from './pages/FAQ';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import Quiz from './pages/Quiz';
@@ -26,6 +28,8 @@ function App() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/quiz/:id" element={<QuizLanding />} />

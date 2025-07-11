@@ -105,7 +105,7 @@ const FAQ = () => {
         },
         {
           question: "What if I forget my password?",
-          answer: "Password resets are not currently available and will be implemented in future development"
+          answer: "Use the \"Forgot Password\" link on the login page to request a reset email. You'll be able to set a new password using the link provided."
         },
         {
           question: "Can I delete my account?",
