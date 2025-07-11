@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { BookOpen, Clock, BarChart3, PlayCircle, TrendingUp, Edit2, Edit3, X, Check } from 'lucide-react';
 import axios from 'axios';
@@ -327,7 +327,16 @@ const QuizLanding = () => {
       </div>
       <div className="card" style={{ marginTop: '2rem' }}>
         <h3 style={{ marginTop: 0 }}>Sections</h3>
-        {sections.map((section) => (
+        {hasSections && (
+          <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+            <Link to={`/quiz/${id}/metrics`} className="btn btn-secondary btn-small">
+              View Section Metrics
+            </Link>
+          </div>
+        )}
+        {sections.map((section) => {
+          const sectionInfo = stats?.section_stats?.find((s) => s.section_id === section.section_id);
+          return (
           <div key={section.section_id} style={{ marginBottom: '2rem' }}>
             {editingSection && editingSection.section_id === section.section_id ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -357,7 +366,19 @@ const QuizLanding = () => {
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}
               >
                 <div>
-                  <h4 style={{ margin: '0 0 0.25rem 0' }}>{section.name}</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <h4 style={{ margin: '0 0 0.25rem 0' }}>{section.name}</h4>
+                    {sectionInfo && (
+                      <span className="section-metrics-container">
+                        <BarChart3 size={16} style={{ color: '#3498db', cursor: 'pointer' }} />
+                        <span className="section-metrics-tooltip">
+                          {sectionInfo.question_count} questions
+                          <br />
+                          Accuracy: {sectionInfo.accuracy}%
+                        </span>
+                      </span>
+                    )}
+                  </div>
                   <p style={{ color: '#7f8c8d', margin: 0 }}>{section.description}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -452,7 +473,8 @@ const QuizLanding = () => {
               ))}
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );
