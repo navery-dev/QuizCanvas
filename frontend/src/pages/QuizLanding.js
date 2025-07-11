@@ -372,13 +372,11 @@ const QuizLanding = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <h4 style={{ margin: '0 0 0.25rem 0' }}>{section.name}</h4>
                     {sectionInfo && (
-                      <span className="section-metrics-container">
+                      <span
+                        className="section-metrics-container"
+                        title={`${sectionInfo.question_count} questions\nAccuracy: ${sectionInfo.accuracy}%`}
+                      >
                         <BarChart3 size={16} style={{ color: '#3498db', cursor: 'pointer' }} />
-                        <span className="section-metrics-tooltip">
-                          {sectionInfo.question_count} questions
-                          <br />
-                          Accuracy: {sectionInfo.accuracy}%
-                        </span>
                       </span>
                     )}
                   </div>
