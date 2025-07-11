@@ -11,6 +11,7 @@ import Upload from './pages/Upload';
 import Quiz from './pages/Quiz';
 import Profile from './pages/Profile';
 import QuizLanding from './pages/QuizLanding';
+import SectionMetrics from './pages/SectionMetrics';
 import { AuthProvider } from './services/AuthContext';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/quiz/:id" element={<QuizLanding />} />
+              <Route path="/quiz/:id/metrics" element={<SectionMetrics />} />
               <Route path="/quiz/:id/take" element={<Quiz />} />
               <Route path="/profile" element={<Profile />} />
             </Routes>
