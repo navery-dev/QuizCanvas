@@ -320,6 +320,8 @@ body {
     padding: 1.5rem;
   }
 
+}
+
 /* Spinner animation for loading states */
 @keyframes spin {
   0% { transform: rotate(0deg); }
