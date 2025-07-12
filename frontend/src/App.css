@@ -410,7 +410,7 @@ body {
 .mastery-needs-practice { background: #fadbd8; color: #e74c3c; }
 
 .edit-container .edit-control {
-  visibility: hidden;
+  visibility: visible;
 }
 
 .edit-container:hover .edit-control {
