@@ -180,6 +180,13 @@ AWS_S3_ARN=arn:aws:s3:::your-bucket-name
 AWS_STORAGE_BUCKET_NAME=your-bucket-name
 ALLOWED_HOSTS=[addCustomHostName],127.0.0.1,localhost
 DEBUG=False
+EMAIL_HOST=smtp.office365.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-outlook-email
+EMAIL_HOST_PASSWORD=your-outlook-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL="QuizCanvas <your-outlook-email>"
+FRONTEND_BASE_URL=https://quizcanvas.xyz
 ```
 
 ### External Services Setup
@@ -208,6 +215,8 @@ Configure these secrets in your GitHub repository settings:
 - `AWS_S3_ARN` - S3 bucket ARN
 - `AWS_STORAGE_BUCKET_NAME` - S3 bucket name
 - `REACT_APP_API_URL` - Backend API URL (Custom Host Name)
+- `EMAIL_HOST_USER` - Outlook email address used to send reset emails
+- `EMAIL_HOST_PASSWORD` - Password for the Outlook account
 
 **Auto-provided Secrets:**
 - `GITHUB_TOKEN` - Automatically provided by GitHub

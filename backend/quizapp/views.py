@@ -400,7 +400,6 @@ def get_user_account_save_options(request):
 def reset_password_request(request):
     """
     Test Case ID: 4, 12 - Reset Forgotten Password + Email Notification Delivery
-    Note: Email functionality will be implemented in future version
     """
     try:
         data = json.loads(request.body)
@@ -425,15 +424,26 @@ def reset_password_request(request):
         try:
             user = Users.objects.get(email=email)
             logger.info(f"Password reset requested for existing user: {email}")
+
+            reset_payload = {
+                'user_id': user.userID,
+                'purpose': 'password_reset',
+                'exp': datetime.utcnow() + timedelta(hours=1),
+                'iat': datetime.utcnow(),
+            }
+            reset_token = jwt.encode(reset_payload, settings.JWT_SECRET_KEY, algorithm='HS256')
+
+            from .services import get_email_service
+
+            email_service = get_email_service()
+            email_service.send_password_reset_email(email, reset_token)
+
         except Users.DoesNotExist:
+            # Do not reveal user does not exist
             logger.warning(f"Password reset requested for non-existent email: {email}")
-        
-        # For now, return success message and log the request
-        # TODO: Implement email service in future version
-        logger.info(f"Password reset request logged for {email}. Email service not yet implemented.")
-        
+
         return APIResponse.success(
-            message='Password reset request received. Email functionality will be available in a future version. Please contact an administrator for password reset assistance.'
+            message='If the email is registered, a password reset link has been sent.'
         )
         
     except json.JSONDecodeError:
