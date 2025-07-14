@@ -203,3 +203,18 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 # JWT Configuration
 JWT_SECRET_KEY = config('JWT_SECRET_KEY', default=SECRET_KEY)
 
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.office365.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    f"QuizCanvas <{EMAIL_HOST_USER or 'noreply@example.com'}>"
+)
+
+# Frontend URL for links in emails
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://quizcanvas.xyz')
+
