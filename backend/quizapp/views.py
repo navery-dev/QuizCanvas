@@ -431,16 +431,25 @@ def reset_password_request(request):
                 'exp': datetime.utcnow() + timedelta(hours=1),
                 'iat': datetime.utcnow(),
             }
-            reset_token = jwt.encode(reset_payload, settings.JWT_SECRET_KEY, algorithm='HS256')
+            reset_token = jwt.encode(
+                reset_payload,
+                settings.JWT_SECRET_KEY,
+                algorithm='HS256'
+            )
 
             from .services import get_email_service
 
             email_service = get_email_service()
-            email_service.send_password_reset_email(email, reset_token)
+            try:
+                email_service.send_password_reset_email(email, reset_token)
+            except Exception as e:
+                logger.error(f"Error sending password reset email to {email}: {e}")
 
         except Users.DoesNotExist:
             # Do not reveal user does not exist
-            logger.warning(f"Password reset requested for non-existent email: {email}")
+            logger.warning(
+                f"Password reset requested for non-existent email: {email}"
+            )
 
         return APIResponse.success(
             message='If the email is registered, a password reset link has been sent.'
