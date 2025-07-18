@@ -33,14 +33,25 @@ jobs:
         # Install/update dependencies
         pip install -r requirements.txt
         
-        # Create .env file with secrets
+        # Create .env file with secrets (INCLUDING EMAIL VARIABLES)
         echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
         echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
         echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
         echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
         echo "AWS_S3_ARN=${{ secrets.AWS_S3_ARN }}" >> .env
         echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+        echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
+        echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+        echo "EMAIL_HOST=smtp.office365.com" >> .env
+        echo "EMAIL_PORT=587" >> .env
+        echo "EMAIL_USE_TLS=True" >> .env
+        echo "DEFAULT_FROM_EMAIL=QuizCanvas <${{ secrets.EMAIL_HOST_USER }}>" >> .env
+        echo "FRONTEND_BASE_URL=https://quizcanvas.xyz" >> .env
         echo "DEBUG=False" >> .env
+        
+        # Set proper permissions for .env file
+        chmod 600 .env
+        
         # Run migrations
         python manage.py migrate
         
