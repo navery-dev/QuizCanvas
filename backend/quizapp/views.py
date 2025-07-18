@@ -421,10 +421,16 @@ def reset_password_request(request):
             )
         
         # Check if user exists
+        user_exists = False
+        email_sent = False
+        error_message = None
+        
         try:
             user = Users.objects.get(email=email)
+            user_exists = True
             logger.info(f"Password reset requested for existing user: {email}")
 
+            # Generate reset token
             reset_payload = {
                 'user_id': user.userID,
                 'purpose': 'password_reset',
@@ -437,35 +443,115 @@ def reset_password_request(request):
                 algorithm='HS256'
             )
 
+            # Import and use email service
             from .services import get_email_service
 
-            email_service = get_email_service()
             try:
+                email_service = get_email_service()
                 email_service.send_password_reset_email(email, reset_token)
+                email_sent = True
+                logger.info(f"Password reset email sent successfully to {email}")
+                
+            except ConnectionError as e:
+                error_message = f"Email service connection error: {e}"
+                logger.error(error_message)
+                
+            except ValueError as e:
+                error_message = f"Invalid email data: {e}"
+                logger.error(error_message)
+                
             except Exception as e:
-                logger.error(f"Error sending password reset email to {email}: {e}")
+                error_message = f"Unexpected error sending email: {e}"
+                logger.error(error_message)
 
         except Users.DoesNotExist:
-            # Do not reveal user does not exist
-            logger.warning(
-                f"Password reset requested for non-existent email: {email}"
-            )
+            # Do not reveal user does not exist for security
+            logger.warning(f"Password reset requested for non-existent email: {email}")
+
+        # Always return success message for security (don't reveal if user exists)
+        # But log the actual result for debugging
+        if user_exists and not email_sent and error_message:
+            # Log the actual error for debugging but don't expose it to user
+            logger.error(f"Failed to send password reset email to {email}: {error_message}")
+            
+            # In development, you might want to return the actual error
+            if settings.DEBUG:
+                return APIResponse.error(
+                    f'Email sending failed: {error_message}',
+                    error_code='EMAIL_SEND_FAILED',
+                    status=500
+                )
 
         return APIResponse.success(
-            message='If the email is registered, a password reset link has been sent.'
+            message='If the email is registered, a password reset link has been sent.',
+            data={
+                'email_requested': email,
+                'timestamp': datetime.utcnow().isoformat()
+            }
         )
         
     except json.JSONDecodeError:
         return APIResponse.error(
             'Invalid JSON data',
-            error_code='INVALID_JSON'
+            error_code='INVALID_JSON',
+            status=400
         )
     except Exception as e:
-        logger.error(f"Error processing password reset request: {e}")
+        logger.error(f"Unexpected error in reset_password_request: {e}")
         return APIResponse.error(
             'Internal server error',
             error_code='SERVER_ERROR',
             status=500
+        )
+
+
+# Add this new view for testing email configuration
+@csrf_exempt
+@require_http_methods(["GET"])
+def test_email_config(request):
+    """
+    Debug endpoint to test email configuration (only in DEBUG mode)
+    """
+    if not settings.DEBUG:
+        return APIResponse.error(
+            'Endpoint not available in production',
+            error_code='NOT_AVAILABLE',
+            status=404
+        )
+    
+    try:
+        from .services import get_email_service
+        from .services.email_service import debug_email_configuration
+        
+        # Get configuration info
+        config_info = debug_email_configuration()
+        
+        # Test email service
+        try:
+            email_service = get_email_service()
+            connection_test = email_service.test_email_connection()
+            
+            return APIResponse.success(
+                message='Email configuration test completed',
+                data={
+                    'configuration': config_info,
+                    'connection_test_passed': connection_test,
+                    'service_initialized': True
+                }
+            )
+            
+        except Exception as e:
+            return APIResponse.error(
+                f'Email service initialization failed: {e}',
+                error_code='EMAIL_SERVICE_FAILED',
+                data={'configuration': config_info}
+            )
+            
+    except Exception as e:
+        logger.error(f"Email configuration test failed: {e}")
+        return APIResponse.error(
+            f'Email configuration test failed: {e}',
+            error_code='CONFIG_TEST_FAILED'
         )
     
 @csrf_exempt
