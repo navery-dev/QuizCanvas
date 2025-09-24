@@ -55,5 +55,4 @@ urlpatterns = [
     path('system/connections/', views.check_system_connections, name='system_connections'),  
     path('faq/', views.get_faq, name='get_faq'),  
 
-    path('api/test-gmail/', views.test_gmail_connection, name='test_gmail'),
 ]
