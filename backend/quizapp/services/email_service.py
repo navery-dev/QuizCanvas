@@ -188,3 +188,134 @@ def debug_gmail_configuration():
     logger.info(f"  Gmail optimized: {gmail_optimized}")
     
     return config_info
+
+class EmailService:
+    """Service for sending emails"""
+    
+    # ... existing methods ...
+    
+    def send_username_reminder_email(self, to_email: str, username: str) -> None:
+        """Send username reminder email"""
+        try:
+            # Validate inputs
+            if not to_email or '@' not in to_email:
+                raise ValueError("Invalid email address provided")
+            
+            if not username:
+                raise ValueError("Username is required")
+            
+            logger.info(f"Attempting to send username reminder email to {to_email}")
+            
+            # Test connection first
+            if not self.test_email_connection():
+                raise ConnectionError("Unable to connect to Gmail SMTP server")
+            
+            subject = "QuizCanvas Username Reminder"
+            
+            text_body = f"""Hello,
+
+You requested a username reminder for your QuizCanvas account.
+
+Your username is: {username}
+
+You can now use this username to log in to your QuizCanvas account at:
+{settings.FRONTEND_BASE_URL}/login
+
+If you didn't request this reminder, please ignore this email.
+
+Best regards,
+QuizCanvas Team"""
+
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: #3498db; margin: 0;">QuizCanvas</h2>
+                        <p style="color: #7f8c8d; margin: 5px 0 0 0;">Username Reminder</p>
+                    </div>
+                    
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <p>Hello,</p>
+                        <p>You requested a username reminder for your QuizCanvas account.</p>
+                    </div>
+                    
+                    <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; border-left: 4px solid #4CAF50; margin: 20px 0; text-align: center;">
+                        <h3 style="margin: 0; color: #2e7d32;">Your Username</h3>
+                        <p style="font-size: 18px; font-weight: bold; color: #1b5e20; margin: 10px 0; font-family: monospace;">
+                            {username}
+                        </p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{settings.FRONTEND_BASE_URL}/login" 
+                           style="background-color: #3498db; 
+                                  color: white; 
+                                  padding: 15px 30px; 
+                                  text-decoration: none; 
+                                  border-radius: 5px; 
+                                  display: inline-block;
+                                  font-weight: bold;
+                                  font-size: 16px;">
+                            Go to Login
+                        </a>
+                    </div>
+                    
+                    <div style="margin: 30px 0;">
+                        <p>If you didn't request this reminder, please ignore this email.</p>
+                        <p>For security reasons:</p>
+                        <ul>
+                            <li>Never share your login credentials</li>
+                            <li>Always log out from shared computers</li>
+                            <li>Use a strong, unique password</li>
+                        </ul>
+                    </div>
+                    
+                    <hr style="border: 1px solid #eee; margin: 30px 0;">
+                    
+                    <div style="text-align: center; color: #7f8c8d; font-size: 14px;">
+                        <p>Best regards,<br>
+                        <strong>QuizCanvas Team</strong></p>
+                        <p>This is an automated message, please do not reply to this email.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            logger.info(f"Creating username reminder email for {to_email}")
+            
+            # Create email message
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[to_email]
+            )
+            msg.attach_alternative(html_body, "text/html")
+            
+            # Send with specific Gmail error handling
+            try:
+                logger.info(f"Sending username reminder email to {to_email} via Gmail...")
+                msg.send(fail_silently=False)
+                logger.info(f"Username reminder email sent successfully to {to_email}")
+                
+            except smtplib.SMTPAuthenticationError as e:
+                logger.error(f"Gmail SMTP Authentication failed: {e}")
+                raise ConnectionError(f"Gmail authentication failed: {e}")
+                
+            except smtplib.SMTPRecipientsRefused as e:
+                logger.error(f"Gmail recipients refused: {e}")
+                raise ValueError(f"Email address {to_email} was refused by Gmail: {e}")
+                
+            except smtplib.SMTPServerDisconnected as e:
+                logger.error(f"Gmail SMTP server disconnected: {e}")
+                raise ConnectionError(f"Gmail server disconnected: {e}")
+                
+            except smtplib.SMTPException as e:
+                logger.error(f"Gmail SMTP error occurred: {e}")
+                raise ConnectionError(f"Gmail email sending failed: {e}")
+                
+        except Exception as e:
+            logger.error(f"Failed to send username reminder email to {to_email}: {str(e)}")
+            raise  # Re-raise the exception so calling code can handle it

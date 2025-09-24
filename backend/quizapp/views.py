@@ -2839,3 +2839,79 @@ def check_system_connections(request):
             error_code='CONNECTION_CHECK_ERROR',
             status=500
         )
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def forgot_username_request(request):
+    """
+    Forgot Username - Email username to user after verifying email and password
+    """
+    try:
+        data = json.loads(request.body)
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not email or not password:
+            return APIResponse.error(
+                'Email and password are required',
+                error_code='MISSING_FIELDS'
+            )
+        
+        # Validate email format
+        try:
+            validate_email(email)
+        except ValidationError:
+            return APIResponse.error(
+                'Invalid email format',
+                error_code='INVALID_EMAIL'
+            )
+        
+        # Check if user exists and verify password
+        try:
+            user = Users.objects.get(email=email)
+            
+            # Verify password
+            if not check_password(password, user.password):
+                # Don't reveal that email exists but password is wrong
+                # Use same message as when email doesn't exist for security
+                logger.warning(f"Forgot username request with incorrect password for email: {email}")
+                return APIResponse.success(
+                    message='If the email and password are correct, the username will be sent to the provided email address.'
+                )
+            
+            logger.info(f"Forgot username request for verified user: {email}")
+            
+            # Send username via email
+            from .services import get_email_service
+            try:
+                email_service = get_email_service()
+                email_service.send_username_reminder_email(email, user.userName)
+                logger.info(f"Username reminder email sent to {email}")
+                
+            except Exception as e:
+                logger.error(f"Error sending username reminder email to {email}: {e}")
+                # Don't reveal the error to user for security
+                return APIResponse.success(
+                    message='If the email and password are correct, the username will be sent to the provided email address.'
+                )
+
+        except Users.DoesNotExist:
+            # Don't reveal user doesn't exist for security
+            logger.warning(f"Forgot username requested for non-existent email: {email}")
+
+        return APIResponse.success(
+            message='If the email and password are correct, the username will be sent to the provided email address.'
+        )
+        
+    except json.JSONDecodeError:
+        return APIResponse.error(
+            'Invalid JSON data',
+            error_code='INVALID_JSON'
+        )
+    except Exception as e:
+        logger.error(f"Error processing forgot username request: {e}")
+        return APIResponse.error(
+            'Internal server error',
+            error_code='SERVER_ERROR',
+            status=500
+        )

@@ -11,6 +11,7 @@ urlpatterns = [
     path('auth/profile/', views.update_user_profile, name='update_user_profile'), 
     path('auth/password-reset/', views.reset_password_request, name='reset_password_request'),  
     path('auth/password-reset/confirm/', views.reset_password_confirm, name='reset_password_confirm'),
+    path('auth/forgot-username/', views.forgot_username_request, name='forgot_username_request'),
     path('auth/change-password/', views.change_password, name='change_password'),
     path('auth/save-options/', views.get_user_account_save_options, name='user_save_options'),  
     

@@ -102,11 +102,20 @@ const Login = () => {
             </Link>
           </p>
           
+          <div style={{ marginBottom: '10px' }}>
+            <Link 
+              to="/forgot-password" 
+              style={{ color: '#3498db', textDecoration: 'none', fontSize: '0.9rem' }}
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
           <Link 
-            to="/forgot-password" 
+            to="/forgot-username" 
             style={{ color: '#3498db', textDecoration: 'none', fontSize: '0.9rem' }}
           >
-            Forgot your password?
+            Forgot your username?
           </Link>
         </div>
       </div>

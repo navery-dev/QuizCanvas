@@ -210,12 +210,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const requestUsernameReminder = async (email, password) => {
+  try {
+    setLoading(true);
+    const response = await axios.post('/api/auth/forgot-username/', { 
+      email, 
+      password 
+    });
+    if (response.data.success) {
+      return { success: true, message: response.data.message };
+    }
+    return { success: false, error: response.data.error || 'Username reminder request failed' };
+  } catch (error) {
+    console.error('Username reminder request failed:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Username reminder request failed'
+    };
+  } finally {
+    setLoading(false);
+  }
+};
+
   const value = {
     user,
     login,
     register,
     requestPasswordReset,
     resetPassword,
+    requestUsernameReminder,
     logout,
     loading,
     isAuthenticated: !!user
