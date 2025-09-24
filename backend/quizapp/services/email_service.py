@@ -7,20 +7,19 @@ from django.core.exceptions import ImproperlyConfigured
 logger = logging.getLogger(__name__)
 
 class EmailService:
-    """Service for sending emails with improved error handling"""
+    """Improved Gmail email service with proper error handling"""
     
     def __init__(self):
-        """Initialize email service and validate configuration"""
-        self._validate_email_configuration()
+        """Initialize and validate Gmail configuration"""
+        self._validate_gmail_configuration()
     
-    def _validate_email_configuration(self):
-        """Validate that all required email settings are configured"""
+    def _validate_gmail_configuration(self):
+        """Validate Gmail-specific configuration"""
         required_settings = [
-            'EMAIL_HOST',
-            'EMAIL_PORT', 
             'EMAIL_HOST_USER',
             'EMAIL_HOST_PASSWORD',
-            'DEFAULT_FROM_EMAIL'
+            'EMAIL_HOST',
+            'EMAIL_PORT'
         ]
         
         missing_settings = []
@@ -30,21 +29,33 @@ class EmailService:
         
         if missing_settings:
             raise ImproperlyConfigured(
-                f"Missing email configuration settings: {', '.join(missing_settings)}"
+                f"Missing Gmail configuration settings: {', '.join(missing_settings)}"
             )
         
-        logger.info("Email configuration validated successfully")
+        # Verify Gmail-specific settings
+        if getattr(settings, 'EMAIL_HOST') != 'smtp.gmail.com':
+            logger.warning(f"EMAIL_HOST is {getattr(settings, 'EMAIL_HOST')}, expected smtp.gmail.com for Gmail")
+        
+        if getattr(settings, 'EMAIL_PORT') != 587:
+            logger.warning(f"EMAIL_PORT is {getattr(settings, 'EMAIL_PORT')}, expected 587 for Gmail")
+        
+        email_user = getattr(settings, 'EMAIL_HOST_USER', '')
+        if not email_user.endswith('@gmail.com'):
+            logger.warning(f"EMAIL_HOST_USER {email_user} doesn't appear to be a Gmail address")
+        
+        logger.info("Gmail email configuration validated")
     
     def test_email_connection(self):
-        """Test email server connection"""
+        """Test Gmail SMTP connection"""
         try:
+            logger.info("Testing Gmail SMTP connection...")
             connection = get_connection()
             connection.open()
             connection.close()
-            logger.info("Email connection test successful")
+            logger.info("Gmail connection test successful")
             return True
         except Exception as e:
-            logger.error(f"Email connection test failed: {e}")
+            logger.error(f"Gmail connection test failed: {e}")
             return False
     
     def send_password_reset_email(self, to_email: str, reset_token: str) -> None:
@@ -57,9 +68,11 @@ class EmailService:
             if not reset_token:
                 raise ValueError("Reset token is required")
             
+            logger.info(f"Attempting to send password reset email to {to_email}")
+            
             # Test connection first
             if not self.test_email_connection():
-                raise ConnectionError("Unable to connect to email server")
+                raise ConnectionError("Unable to connect to Gmail SMTP server")
             
             # Generate email content
             reset_url = f"{settings.FRONTEND_BASE_URL}/reset-password?token={reset_token}"
@@ -83,7 +96,7 @@ QuizCanvas Team"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #3498db; text-align: center;">Password Reset Request</h2>
+                    <h2 style="color: #3498db; text-align: center;">QuizCanvas Password Reset</h2>
                     <p>Hello,</p>
                     <p>You requested a password reset for your QuizCanvas account.</p>
                     <div style="text-align: center; margin: 30px 0;">
@@ -95,22 +108,23 @@ QuizCanvas Team"""
                                   border-radius: 5px; 
                                   display: inline-block;
                                   font-weight: bold;">
-                            Reset Password
+                            Reset Your Password
                         </a>
                     </div>
                     <p><strong>This link will expire in 1 hour.</strong></p>
                     <p>If you didn't request this reset, please ignore this email.</p>
                     <hr style="border: 1px solid #eee; margin: 30px 0;">
                     <p style="color: #7f8c8d; font-size: 14px;">
-                        Best regards,<br>
-                        QuizCanvas Team
+                        Best regards,<br>QuizCanvas Team
                     </p>
                 </div>
             </body>
             </html>
             """
             
-            # Create and send email
+            logger.info(f"Creating email message for {to_email}")
+            
+            # Create email message
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_body,
@@ -119,35 +133,36 @@ QuizCanvas Team"""
             )
             msg.attach_alternative(html_body, "text/html")
             
-            # Send with explicit error handling
+            # Send with specific Gmail error handling
             try:
+                logger.info(f"Sending email to {to_email} via Gmail...")
                 msg.send(fail_silently=False)
                 logger.info(f"Password reset email sent successfully to {to_email}")
                 
             except smtplib.SMTPAuthenticationError as e:
-                logger.error(f"SMTP Authentication failed: {e}")
-                raise ConnectionError("Email authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD.")
+                logger.error(f"Gmail SMTP Authentication failed: {e}")
+                raise ConnectionError(f"Gmail authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD (app password). Error: {e}")
                 
             except smtplib.SMTPRecipientsRefused as e:
-                logger.error(f"Recipients refused: {e}")
-                raise ValueError(f"Email address {to_email} was refused by the server")
+                logger.error(f"Gmail recipients refused: {e}")
+                raise ValueError(f"Email address {to_email} was refused by Gmail: {e}")
                 
             except smtplib.SMTPServerDisconnected as e:
-                logger.error(f"SMTP server disconnected: {e}")
-                raise ConnectionError("Email server disconnected unexpectedly")
+                logger.error(f"Gmail SMTP server disconnected: {e}")
+                raise ConnectionError(f"Gmail server disconnected unexpectedly: {e}")
                 
             except smtplib.SMTPException as e:
-                logger.error(f"SMTP error occurred: {e}")
-                raise ConnectionError(f"Email sending failed: {e}")
+                logger.error(f"Gmail SMTP error occurred: {e}")
+                raise ConnectionError(f"Gmail email sending failed: {e}")
                 
         except Exception as e:
-            logger.error(f"Failed to send password reset email to {to_email}: {e}")
+            logger.error(f"Failed to send password reset email to {to_email}: {str(e)}")
             raise  # Re-raise the exception so calling code can handle it
 
 
-# Utility function for debugging email configuration
-def debug_email_configuration():
-    """Debug function to check email configuration"""
+# Debug function
+def debug_gmail_configuration():
+    """Debug function to check Gmail configuration"""
     config_info = {
         'EMAIL_HOST': getattr(settings, 'EMAIL_HOST', 'NOT SET'),
         'EMAIL_PORT': getattr(settings, 'EMAIL_PORT', 'NOT SET'),
@@ -155,10 +170,21 @@ def debug_email_configuration():
         'EMAIL_HOST_PASSWORD': '***SET***' if getattr(settings, 'EMAIL_HOST_PASSWORD', None) else 'NOT SET',
         'EMAIL_USE_TLS': getattr(settings, 'EMAIL_USE_TLS', 'NOT SET'),
         'DEFAULT_FROM_EMAIL': getattr(settings, 'DEFAULT_FROM_EMAIL', 'NOT SET'),
+        'FRONTEND_BASE_URL': getattr(settings, 'FRONTEND_BASE_URL', 'NOT SET'),
     }
     
-    logger.info("Email Configuration:")
+    logger.info("Gmail Configuration Debug:")
     for key, value in config_info.items():
         logger.info(f"  {key}: {value}")
+    
+    # Check Gmail optimization
+    gmail_optimized = (
+        getattr(settings, 'EMAIL_HOST', '') == 'smtp.gmail.com' and
+        getattr(settings, 'EMAIL_PORT', 0) == 587 and
+        getattr(settings, 'EMAIL_USE_TLS', False) is True
+    )
+    
+    config_info['gmail_optimized'] = gmail_optimized
+    logger.info(f"  Gmail optimized: {gmail_optimized}")
     
     return config_info
