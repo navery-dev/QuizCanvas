@@ -159,41 +159,6 @@ QuizCanvas Team"""
             logger.error(f"Failed to send password reset email to {to_email}: {str(e)}")
             raise  # Re-raise the exception so calling code can handle it
 
-
-# Debug function
-def debug_gmail_configuration():
-    """Debug function to check Gmail configuration"""
-    config_info = {
-        'EMAIL_HOST': getattr(settings, 'EMAIL_HOST', 'NOT SET'),
-        'EMAIL_PORT': getattr(settings, 'EMAIL_PORT', 'NOT SET'),
-        'EMAIL_HOST_USER': getattr(settings, 'EMAIL_HOST_USER', 'NOT SET'),
-        'EMAIL_HOST_PASSWORD': '***SET***' if getattr(settings, 'EMAIL_HOST_PASSWORD', None) else 'NOT SET',
-        'EMAIL_USE_TLS': getattr(settings, 'EMAIL_USE_TLS', 'NOT SET'),
-        'DEFAULT_FROM_EMAIL': getattr(settings, 'DEFAULT_FROM_EMAIL', 'NOT SET'),
-        'FRONTEND_BASE_URL': getattr(settings, 'FRONTEND_BASE_URL', 'NOT SET'),
-    }
-    
-    logger.info("Gmail Configuration Debug:")
-    for key, value in config_info.items():
-        logger.info(f"  {key}: {value}")
-    
-    # Check Gmail optimization
-    gmail_optimized = (
-        getattr(settings, 'EMAIL_HOST', '') == 'smtp.gmail.com' and
-        getattr(settings, 'EMAIL_PORT', 0) == 587 and
-        getattr(settings, 'EMAIL_USE_TLS', False) is True
-    )
-    
-    config_info['gmail_optimized'] = gmail_optimized
-    logger.info(f"  Gmail optimized: {gmail_optimized}")
-    
-    return config_info
-
-class EmailService:
-    """Service for sending emails"""
-    
-    # ... existing methods ...
-    
     def send_username_reminder_email(self, to_email: str, username: str) -> None:
         """Send username reminder email"""
         try:
@@ -319,3 +284,33 @@ QuizCanvas Team"""
         except Exception as e:
             logger.error(f"Failed to send username reminder email to {to_email}: {str(e)}")
             raise  # Re-raise the exception so calling code can handle it
+
+
+# Debug function
+def debug_gmail_configuration():
+    """Debug function to check Gmail configuration"""
+    config_info = {
+        'EMAIL_HOST': getattr(settings, 'EMAIL_HOST', 'NOT SET'),
+        'EMAIL_PORT': getattr(settings, 'EMAIL_PORT', 'NOT SET'),
+        'EMAIL_HOST_USER': getattr(settings, 'EMAIL_HOST_USER', 'NOT SET'),
+        'EMAIL_HOST_PASSWORD': '***SET***' if getattr(settings, 'EMAIL_HOST_PASSWORD', None) else 'NOT SET',
+        'EMAIL_USE_TLS': getattr(settings, 'EMAIL_USE_TLS', 'NOT SET'),
+        'DEFAULT_FROM_EMAIL': getattr(settings, 'DEFAULT_FROM_EMAIL', 'NOT SET'),
+        'FRONTEND_BASE_URL': getattr(settings, 'FRONTEND_BASE_URL', 'NOT SET'),
+    }
+    
+    logger.info("Gmail Configuration Debug:")
+    for key, value in config_info.items():
+        logger.info(f"  {key}: {value}")
+    
+    # Check Gmail optimization
+    gmail_optimized = (
+        getattr(settings, 'EMAIL_HOST', '') == 'smtp.gmail.com' and
+        getattr(settings, 'EMAIL_PORT', 0) == 587 and
+        getattr(settings, 'EMAIL_USE_TLS', False) is True
+    )
+    
+    config_info['gmail_optimized'] = gmail_optimized
+    logger.info(f"  Gmail optimized: {gmail_optimized}")
+    
+    return config_info
