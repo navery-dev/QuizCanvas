@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import QuizLanding from './pages/QuizLanding';
 import SectionMetrics from './pages/SectionMetrics';
 import { AuthProvider } from './services/AuthContext';
+import ForgotUsername from './pages/ForgotUsername';
 
 function App() {
   return (
@@ -29,7 +30,8 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />  {/* Updated this line */}
+              <Route path="/forgot-username" element={<ForgotUsername />} />
+              <Route path="/reset-password" element={<ResetPassword />} /> 
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/quiz/:id" element={<QuizLanding />} />
