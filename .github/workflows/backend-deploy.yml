@@ -33,19 +33,25 @@ jobs:
         # Install/update dependencies
         pip install -r requirements.txt
         
-        # Create .env file with secrets (INCLUDING EMAIL VARIABLES)
+        # Create .env file with ALL secrets (including email!)
         echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
         echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
         echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
         echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
         echo "AWS_S3_ARN=${{ secrets.AWS_S3_ARN }}" >> .env
         echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+        
+        # EMAIL CONFIGURATION
         echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
         echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
-        echo "EMAIL_HOST=smtp.office365.com" >> .env
+        
+        # FOR GMAIL:
+        echo "EMAIL_HOST=smtp.gmail.com" >> .env
         echo "EMAIL_PORT=587" >> .env
         echo "EMAIL_USE_TLS=True" >> .env
         echo "DEFAULT_FROM_EMAIL=QuizCanvas <${{ secrets.EMAIL_HOST_USER }}>" >> .env
+        
+        # Other settings
         echo "FRONTEND_BASE_URL=https://quizcanvas.xyz" >> .env
         echo "DEBUG=False" >> .env
         
