@@ -105,7 +105,15 @@ const FAQ = () => {
         },
         {
           question: "What if I forget my password?",
-          answer: "Use the \"Forgot Password\" link on the login page to request a reset email. You'll be able to set a new password using the link provided."
+          answer: "Use the \"Forgot Password\" link on the login page to request a reset email. You'll receive an email with a secure link to reset your password. The reset link expires after 1 hour for security."
+        },
+        {
+          question: "What if I forget my username?",
+          answer: "Your username is displayed in your profile once you're logged in. If you can't remember it, you can use your email address to log in instead, or use the forgot password feature with your email."
+        },
+        {
+          question: "How secure is the password reset process?",
+          answer: "Very secure! Reset tokens expire after 1 hour, are single-use only, and are sent to your registered email address. We never store your actual password - only an encrypted version."
         },
         {
           question: "Can I delete my account?",
