@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -12,17 +13,41 @@ const ResetPassword = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState('');
+  const [tokenValid, setTokenValid] = useState(null); // null = checking, true = valid, false = invalid
 
-  // Extract token from query parameters
+  // Validate token on page load
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const tokenParam = urlParams.get('token');
-    
-    if (tokenParam) {
+    const validateToken = async () => {
+      const urlParams = new URLSearchParams(location.search);
+      const tokenParam = urlParams.get('token');
+      
+      if (!tokenParam) {
+        setError('Invalid reset link. Please request a new password reset.');
+        setTokenValid(false);
+        return;
+      }
+      
       setToken(tokenParam);
-    } else {
-      setError('Invalid reset link. Please request a new password reset.');
-    }
+      
+      // Validate token by attempting to decode it on backend
+      try {
+        const response = await axios.post('/api/auth/validate-reset-token/', {
+          token: tokenParam
+        });
+        
+        if (response.data.success) {
+          setTokenValid(true);
+        } else {
+          setError(response.data.error || 'This password reset link has expired or is invalid. Please request a new one.');
+          setTokenValid(false);
+        }
+      } catch (err) {
+        setError('This password reset link has expired or is invalid. Please request a new one.');
+        setTokenValid(false);
+      }
+    };
+    
+    validateToken();
   }, [location]);
 
   const handleChange = (e) => {
@@ -72,59 +97,90 @@ const ResetPassword = () => {
           <p style={{ color: '#7f8c8d' }}>Enter a new password for your account</p>
         </div>
 
-        {error && (
-          <div className="error-message">{error}</div>
+        {/* Show loading while validating token */}
+        {tokenValid === null && (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <p>Validating reset link...</p>
+          </div>
         )}
-        
-        {message && (
-          <div className="success-message">{message}</div>
+
+        {/* Show error if token is invalid or expired */}
+        {tokenValid === false && (
+          <div>
+            <div className="error-message" style={{ marginBottom: '20px' }}>
+              <AlertCircle size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
+              {error}
+            </div>
+            <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <p style={{ marginBottom: '15px' }}>This password reset link has expired or is invalid.</p>
+              <Link 
+                to="/forgot-password" 
+                className="btn btn-primary"
+                style={{ display: 'inline-block', textDecoration: 'none' }}
+              >
+                Request New Reset Link
+              </Link>
+            </div>
+          </div>
         )}
 
-        {/* Only show form if we have a valid token and no success message */}
-        {token && !message && (
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="newPassword">
-                <Lock size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                New Password
-              </label>
-              <input
-                type="password"
-                id="newPassword"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                required
-                minLength="6"
-                placeholder="Enter new password (min 6 characters)"
-              />
-            </div>
+        {/* Show form only if token is valid */}
+        {tokenValid === true && (
+          <>
+            {error && (
+              <div className="error-message">{error}</div>
+            )}
+            
+            {message && (
+              <div className="success-message">{message}</div>
+            )}
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword">
-                <Lock size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                minLength="6"
-                placeholder="Confirm new password"
-              />
-            </div>
+            {!message && (
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label htmlFor="newPassword">
+                    <Lock size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    name="newPassword"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    required
+                    minLength="6"
+                    placeholder="Enter new password (min 6 characters)"
+                  />
+                </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-full-width"
-              disabled={loading}
-            >
-              {loading ? 'Updating Password...' : 'Reset Password'}
-            </button>
-          </form>
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">
+                    <Lock size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    minLength="6"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-full-width"
+                  disabled={loading}
+                >
+                  {loading ? 'Updating Password...' : 'Reset Password'}
+                </button>
+              </form>
+            )}
+          </>
         )}
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>

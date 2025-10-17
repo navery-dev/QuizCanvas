@@ -2915,3 +2915,82 @@ def forgot_username_request(request):
             error_code='SERVER_ERROR',
             status=500
         )
+    
+@csrf_exempt
+@require_http_methods(["POST"])
+def validate_reset_token(request):
+    """
+    Validate password reset token without actually resetting password
+    This allows frontend to check if token is valid/expired before showing form
+    """
+    try:
+        data = json.loads(request.body)
+        token = data.get('token', '').strip()
+        
+        if not token:
+            return APIResponse.error(
+                'Token is required',
+                error_code='MISSING_TOKEN'
+            )
+        
+        # Try to decode and validate token
+        try:
+            payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
+            
+            # Check if it's a password reset token
+            if payload.get('purpose') != 'password_reset':
+                return APIResponse.error(
+                    'Invalid token type',
+                    error_code='INVALID_TOKEN_TYPE'
+                )
+            
+            # Check if user still exists
+            user_id = payload.get('user_id')
+            try:
+                Users.objects.get(userID=user_id)
+            except Users.DoesNotExist:
+                return APIResponse.error(
+                    'User no longer exists',
+                    error_code='USER_NOT_FOUND'
+                )
+            
+            # Token is valid
+            logger.info(f"Valid password reset token checked for user_id: {user_id}")
+            return APIResponse.success(
+                message='Token is valid',
+                data={'valid': True}
+            )
+            
+        except jwt.ExpiredSignatureError:
+            logger.warning("Expired password reset token attempted")
+            return APIResponse.error(
+                'This password reset link has expired. Please request a new one.',
+                error_code='TOKEN_EXPIRED',
+                status=400
+            )
+        except jwt.InvalidTokenError as e:
+            logger.warning(f"Invalid password reset token: {e}")
+            return APIResponse.error(
+                'Invalid password reset link',
+                error_code='INVALID_TOKEN',
+                status=400
+            )
+        except ValidationError as e:
+            return APIResponse.error(
+                str(e),
+                error_code='VALIDATION_ERROR',
+                status=400
+            )
+        
+    except json.JSONDecodeError:
+        return APIResponse.error(
+            'Invalid JSON data',
+            error_code='INVALID_JSON'
+        )
+    except Exception as e:
+        logger.error(f"Error validating reset token: {e}")
+        return APIResponse.error(
+            'Internal server error',
+            error_code='SERVER_ERROR',
+            status=500
+        )

@@ -13,6 +13,7 @@ urlpatterns = [
     path('auth/password-reset/confirm/', views.reset_password_confirm, name='reset_password_confirm'),
     path('auth/forgot-username/', views.forgot_username_request, name='forgot_username_request'),
     path('auth/change-password/', views.change_password, name='change_password'),
+    path('auth/validate-reset-token/', views.validate_reset_token, name='validate_reset_token'),
     path('auth/save-options/', views.get_user_account_save_options, name='user_save_options'),  
     
     # File Management
