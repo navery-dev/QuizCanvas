@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Save, X } from 'lucide-react';
 import axios from 'axios';
 
-// Configure axios base URL to match your other components
 axios.defaults.baseURL = 'https://api.quizcanvas.xyz';
 
 const Profile = () => {
@@ -16,6 +15,12 @@ const Profile = () => {
     username: user?.username || '',
     email: user?.email || ''
   });
+    const [statistics, setStatistics] = useState({
+    total_quizzes: 0,
+    total_attempts: 0,
+    best_score: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -62,6 +67,32 @@ const Profile = () => {
       });
     }
   }, [user]);
+
+  React.useEffect(() => {
+  const fetchStatistics = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await axios.get('/api/dashboard/');
+      
+      if (response.data.success) {
+        setStatistics({
+          total_quizzes: response.data.data.stats.total_quizzes,
+          total_attempts: response.data.data.stats.total_attempts,
+          best_score: response.data.data.stats.best_score
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+      // Keep default zeros if fetch fails
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  if (isAuthenticated && !authLoading) {
+    fetchStatistics();
+  }
+}, [isAuthenticated, authLoading]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -395,55 +426,80 @@ const Profile = () => {
           </div>
         )}
 
-      {/* Account Statistics */}
+        {/* Account Statistics */}
         <div className="card">
           <h2>Account Statistics</h2>
           
-          <div style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              <div style={{ 
-                padding: '1rem', 
-                backgroundColor: '#f8f9fa', 
-                borderRadius: '4px',
-                textAlign: 'center'
-              }}>
-                <h3 style={{ color: '#3498db', margin: '0 0 0.5rem 0' }}>0</h3>
-                <p style={{ color: '#7f8c8d', margin: 0 }}>Total Quizzes</p>
-              </div>
-              
-              <div style={{ 
-                padding: '1rem', 
-                backgroundColor: '#f8f9fa', 
-                borderRadius: '4px',
-                textAlign: 'center'
-              }}>
-                <h3 style={{ color: '#27ae60', margin: '0 0 0.5rem 0' }}>0</h3>
-                <p style={{ color: '#7f8c8d', margin: 0 }}>Quiz Attempts</p>
-              </div>
-              
-              <div style={{
-                padding: '1rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '4px',
-                textAlign: 'center'
-              }}>
-                <h3 style={{ color: '#e74c3c', margin: '0 0 0.5rem 0' }}>0%</h3>
-                <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
-              </div>
+          {statsLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <div className="spinner" style={{ 
+                width: '30px', 
+                height: '30px', 
+                border: '3px solid #f3f3f3',
+                borderTop: '3px solid #3498db',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto'
+              }}></div>
+              <p style={{ color: '#7f8c8d', marginTop: '1rem' }}>Loading statistics...</p>
             </div>
-          </div>
+          ) : (
+            <>
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div style={{ 
+                    padding: '1rem', 
+                    backgroundColor: '#f8f9fa', 
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                  }}>
+                    <h3 style={{ color: '#3498db', margin: '0 0 0.5rem 0' }}>
+                      {statistics.total_quizzes}
+                    </h3>
+                    <p style={{ color: '#7f8c8d', margin: 0 }}>Total Quizzes</p>
+                  </div>
+                  
+                  <div style={{ 
+                    padding: '1rem', 
+                    backgroundColor: '#f8f9fa', 
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                  }}>
+                    <h3 style={{ color: '#27ae60', margin: '0 0 0.5rem 0' }}>
+                      {statistics.total_attempts}
+                    </h3>
+                    <p style={{ color: '#7f8c8d', margin: 0 }}>Quiz Attempts</p>
+                  </div>
+                  
+                  <div style={{
+                    padding: '1rem',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                  }}>
+                    <h3 style={{ color: '#e74c3c', margin: '0 0 0.5rem 0' }}>
+                      {statistics.best_score.toFixed(1)}%
+                    </h3>
+                    <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
+                  </div>
+                </div>
+              </div>
 
-          <div style={{ 
-            padding: '1rem', 
-            backgroundColor: '#fff3cd', 
-            borderRadius: '4px',
-            border: '1px solid #ffeaa7'
-          }}>
-            <h4 style={{ color: '#856404', margin: '0 0 0.5rem 0' }}>Getting Started</h4>
-            <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
-              Upload your first quiz to start tracking your learning progress and see detailed statistics here.
-            </p>
-          </div>
+              {statistics.total_quizzes === 0 && (
+                <div style={{ 
+                  padding: '1rem', 
+                  backgroundColor: '#fff3cd', 
+                  borderRadius: '4px',
+                  border: '1px solid #ffeaa7'
+                }}>
+                  <h4 style={{ color: '#856404', margin: '0 0 0.5rem 0' }}>Getting Started</h4>
+                  <p style={{ color: '#856404', margin: 0, fontSize: '0.9rem' }}>
+                    Upload your first quiz to start tracking your learning progress and see detailed statistics here.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
