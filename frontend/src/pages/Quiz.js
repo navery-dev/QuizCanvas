@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
-import { ArrowLeft, ArrowRight, CheckCircle, Clock, AlertCircle, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Clock, Eye } from 'lucide-react';
 import axios from 'axios';
 
 const Quiz = () => {
