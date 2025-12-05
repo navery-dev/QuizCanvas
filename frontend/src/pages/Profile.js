@@ -104,6 +104,7 @@ const Profile = () => {
       email: user?.email || ''
     });
     setEditing(false);
+    setShowPasswordForm(false);
     setError('');
     setSuccess('');
   };
