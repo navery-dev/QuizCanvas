@@ -69,30 +69,29 @@ const Profile = () => {
   }, [user]);
 
   React.useEffect(() => {
-  const fetchStatistics = async () => {
-    try {
-      setStatsLoading(true);
-      const response = await axios.get('/api/dashboard/');
-      
-      if (response.data.success) {
-        setStatistics({
-          total_quizzes: response.data.data.stats.total_quizzes,
-          total_attempts: response.data.data.stats.total_attempts,
-          best_score: response.data.data.stats.best_score
-        });
+    const fetchStatistics = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await axios.get('/api/dashboard/');
+        
+        if (response.data.success) {
+          setStatistics({
+            total_quizzes: response.data.data.stats.total_quizzes || 0,
+            total_attempts: response.data.data.stats.total_attempts || 0,
+            best_score: response.data.data.stats.best_score || 0
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch statistics:', error);
+      } finally {
+        setStatsLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch statistics:', error);
-      // Keep default zeros if fetch fails
-    } finally {
-      setStatsLoading(false);
-    }
-  };
+    };
 
-  if (isAuthenticated && !authLoading) {
-    fetchStatistics();
-  }
-}, [isAuthenticated, authLoading]);
+    if (isAuthenticated && !authLoading) {
+      fetchStatistics();
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -478,7 +477,7 @@ const Profile = () => {
                     textAlign: 'center'
                   }}>
                     <h3 style={{ color: '#e74c3c', margin: '0 0 0.5rem 0' }}>
-                      {statistics.best_score.toFixed(1)}%
+                      {(statistics.best_score || 0).toFixed(1)}%
                     </h3>
                     <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
                   </div>
