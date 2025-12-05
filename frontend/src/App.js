@@ -38,6 +38,7 @@ function App() {
               <Route path="/quiz/:id/metrics" element={<SectionMetrics />} />
               <Route path="/quiz/:id/take" element={<Quiz />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/review/:attemptId" element={<ReviewAnswers />} />
             </Routes>
           </main>
         </div>

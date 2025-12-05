@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import { ArrowLeft, ArrowRight, CheckCircle, Clock } from 'lucide-react';
 import axios from 'axios';
+import { CheckCircle, AlertCircle, Eye } from 'lucide-react';
 
 const Quiz = () => {
   const { id } = useParams();
@@ -277,6 +278,14 @@ const Quiz = () => {
               >
                 Back to Dashboard
               </button>
+              <button 
+                onClick={() => navigate(`/review/${attemptId}`)} 
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <Eye size={16} /> Review Answers
+              </button>
+              
               <button 
                 onClick={() => window.location.reload()} 
                 className="btn btn-secondary"
