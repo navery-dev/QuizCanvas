@@ -14,6 +14,7 @@ import Quiz from './pages/Quiz';
 import Profile from './pages/Profile';
 import QuizLanding from './pages/QuizLanding';
 import SectionMetrics from './pages/SectionMetrics';
+import ReviewAnswers from './pages/ReviewAnswers';
 import { AuthProvider } from './services/AuthContext';
 import ForgotUsername from './pages/ForgotUsername';
 
