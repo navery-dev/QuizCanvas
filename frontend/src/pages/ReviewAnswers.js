@@ -87,36 +87,36 @@ const ReviewAnswers = () => {
         </div>
       </div>
 
-      {/* Statistics Summary */}
-      <div className="card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+        {/* Statistics Summary */}
+        <div className="card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
         <h2 style={{ color: 'white', marginBottom: '1.5rem' }}>Performance Summary</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-          <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
             <h3 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', color: 'white' }}>
-              {attempt.score.toFixed(1)}%
+                {Number(attempt.score || 0).toFixed(1)}%
             </h3>
             <p style={{ margin: 0, opacity: 0.9 }}>Final Score</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
+            </div>
+            <div style={{ textAlign: 'center' }}>
             <h3 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', color: '#4ade80' }}>
-              {statistics.correct_answers}
+                {statistics.correct_answers || 0}
             </h3>
             <p style={{ margin: 0, opacity: 0.9 }}>Correct</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
+            </div>
+            <div style={{ textAlign: 'center' }}>
             <h3 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', color: '#f87171' }}>
-              {statistics.incorrect_answers}
+                {statistics.incorrect_answers || 0}
             </h3>
             <p style={{ margin: 0, opacity: 0.9 }}>Incorrect</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
+            </div>
+            <div style={{ textAlign: 'center' }}>
             <h3 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', color: 'white' }}>
-              {attempt.total_time || 'N/A'}
+                {attempt.total_time || 'N/A'}
             </h3>
             <p style={{ margin: 0, opacity: 0.9 }}>Time Taken</p>
-          </div>
+            </div>
         </div>
-      </div>
+        </div>
 
       {/* Question Review */}
       <h2 style={{ marginBottom: '1rem' }}>Question by Question Review</h2>

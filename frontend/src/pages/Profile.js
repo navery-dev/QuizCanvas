@@ -477,7 +477,7 @@ const Profile = () => {
                     textAlign: 'center'
                   }}>
                     <h3 style={{ color: '#e74c3c', margin: '0 0 0.5rem 0' }}>
-                      {(statistics.best_score || 0).toFixed(1)}%
+                      {Number(statistics.best_score || 0).toFixed(1)}%
                     </h3>
                     <p style={{ color: '#7f8c8d', margin: 0 }}>Best Score</p>
                   </div>
